@@ -18,7 +18,7 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    touch-action: none;
+    overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
     background: var(--cream);
@@ -126,7 +126,6 @@
     background: var(--coral);
     border: none;
     cursor: pointer;
-    font-size: clamp(1.3rem, 4vw, 2rem);
     box-shadow: 0 5px 18px rgba(255,107,107,0.45);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     -webkit-tap-highlight-color: transparent;
@@ -135,6 +134,7 @@
     align-items: center;
     justify-content: center;
   }
+  #reset-btn svg { width: 52%; height: 52%; pointer-events: none; }
   #reset-btn:active { transform: scale(0.9); box-shadow: 0 3px 10px rgba(255,107,107,0.35); }
 
   /* Bottom row — full width, just the blob scroller */
@@ -148,29 +148,12 @@
     position: relative;
     width: 100%;
   }
-  #blob-scroll-wrapper::before,
-  #blob-scroll-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0; bottom: 0;
-    width: 28px;
-    z-index: 1;
-    pointer-events: none;
-  }
-  #blob-scroll-wrapper::before {
-    left: 0;
-    background: linear-gradient(to right, var(--cream) 10%, transparent);
-  }
-  #blob-scroll-wrapper::after {
-    right: 0;
-    background: linear-gradient(to left, var(--cream) 10%, transparent);
-  }
-
   #blob-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding: 4px 0;
+    touch-action: pan-x;
   }
   #blob-scroll::-webkit-scrollbar { display: none; }
 
@@ -211,6 +194,35 @@
     z-index: 20;
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   }
+
+  #bowl-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #selected-dots {
+    display: flex;
+    gap: 10px;
+    min-height: clamp(18px, 4vw, 28px);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sel-dot {
+    width: clamp(18px, 4vw, 28px);
+    height: clamp(18px, 4vw, 28px);
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3);
+    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
 </style>
 </head>
 <body>
@@ -222,7 +234,10 @@
   <div id="title">mix<span>r</span> 🎨</div>
 
   <div id="bowl-area">
-    <canvas id="bowlCanvas"></canvas>
+    <div id="bowl-stack">
+      <canvas id="bowlCanvas"></canvas>
+      <div id="selected-dots"></div>
+    </div>
     <div id="result-label"></div>
   </div>
 
@@ -237,7 +252,12 @@
   </div>
 </div>
 
-<button id="reset-btn" aria-label="clear bowl">🧹</button>
+<button id="reset-btn" aria-label="reset bowl">
+  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+    <path d="M3 3v5h5"/>
+  </svg>
+</button>
 
 <script>
 // ─── ColorEngine ───────────────────────────────────────────────────────────
@@ -626,7 +646,7 @@ function drawBowl() {
       }
       bowlCtx.stroke(); bowlCtx.restore();
     }
-    if (state.drainProgress >= 1) { state.onDrainComplete(); resultLabel.classList.remove('visible'); }
+    if (state.drainProgress >= 1) { state.onDrainComplete(); resultLabel.classList.remove('visible'); updateSelectedDots(); }
   }
 
   if (state.animState === 'idle' && !mix) {
@@ -705,6 +725,7 @@ function flyBlobToBowl(blobEl, colorName) {
       SoundEngine.plop();
       ParticleSystem.burst(endX, endY, c.r, c.g, c.b, 22);
       BowlState.addColor(colorName);
+      updateSelectedDots();
       if (BowlState.addedColors.length === 1) SoundEngine.shimmer();
       return;
     }
@@ -721,13 +742,55 @@ function flyBlobToBowl(blobEl, colorName) {
 }
 
 // ─── EventHandlers ──────────────────────────────────────────────────────────
-blobEls.forEach(blob => {
-  blob.addEventListener('pointerdown', e => {
-    e.preventDefault();
+const selectedDotsEl = document.getElementById('selected-dots');
+const blobScrollWrapper = document.getElementById('blob-scroll-wrapper');
+
+function updateSelectedDots() {
+  selectedDotsEl.innerHTML = '';
+  BowlState.addedColors.forEach(name => {
+    const c = COLORS[name];
+    const dot = document.createElement('div');
+    dot.className = 'sel-dot';
+    dot.style.background = blobGradient(c.r, c.g, c.b);
+    if (c.r + c.g + c.b > 680) {
+      dot.style.boxShadow = '0 3px 10px rgba(0,0,0,0.15), inset 0 2px 4px rgba(0,0,0,0.08)';
+    }
+    selectedDotsEl.appendChild(dot);
+  });
+  blobScrollWrapper.style.display = BowlState.addedColors.length >= 3 ? 'none' : '';
+}
+
+// Tap detection via delegation — pointerdown starts tracking, pointerup selects if no drag
+let tapBlob = null, tapStartX, tapStartY, tapMoved;
+const blobScrollEl = document.getElementById('blob-scroll');
+
+blobScrollEl.addEventListener('pointerdown', e => {
+  const blob = e.target.closest('.blob');
+  if (!blob) return;
+  tapBlob = blob;
+  tapStartX = e.clientX;
+  tapStartY = e.clientY;
+  tapMoved = false;
+});
+
+document.addEventListener('pointermove', e => {
+  if (!tapBlob) return;
+  if (!tapMoved && (Math.abs(e.clientX - tapStartX) > 8 || Math.abs(e.clientY - tapStartY) > 8)) {
+    tapMoved = true;
+  }
+});
+
+document.addEventListener('pointerup', e => {
+  if (!tapBlob) return;
+  const blob = tapBlob;
+  tapBlob = null;
+  if (!tapMoved) {
     SoundEngine.bloop();
     flyBlobToBowl(blob, blob.dataset.color);
-  });
+  }
 });
+
+document.addEventListener('pointercancel', () => { tapBlob = null; });
 
 document.getElementById('reset-btn').addEventListener('pointerdown', e => {
   e.preventDefault();
