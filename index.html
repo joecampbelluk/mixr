@@ -21,7 +21,7 @@
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
-    background: var(--cream);
+    background: transparent;
     font-family: 'Nunito', sans-serif;
   }
 
@@ -45,6 +45,20 @@
     z-index: 0;
   }
 
+  #version-bar {
+    display: none;
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(0,0,0,0.35);
+    padding: 2px 0 0;
+  }
+  #version-bar.visible { display: block; }
+
   #title {
     position: relative;
     z-index: 2;
@@ -55,6 +69,7 @@
     margin-top: 4px;
     width: 100%;
     text-align: center;
+    cursor: default;
   }
   #title span { color: var(--coral); }
 
@@ -160,6 +175,7 @@
     scrollbar-width: none;
     padding: 4px 0;
     touch-action: pan-x;
+    background: transparent;
   }
   #blob-scroll::-webkit-scrollbar { display: none; }
 
@@ -259,6 +275,7 @@
   <canvas id="particleCanvas"></canvas>
   <div id="flash"></div>
 
+  <div id="version-bar"></div>
   <div id="title">mix<span>r</span> 🎨</div>
 
   <div id="bowl-area">
@@ -289,6 +306,16 @@
 </div>
 
 <script>
+// ─── Version bar ─────────────────────────────────────────────────────────────
+const COMMIT = 'a8d472a';
+const versionBarEl = document.getElementById('version-bar');
+versionBarEl.textContent = COMMIT;
+if (localStorage.getItem('mixr-version-bar') === '1') versionBarEl.classList.add('visible');
+document.getElementById('title').addEventListener('dblclick', () => {
+  const on = versionBarEl.classList.toggle('visible');
+  localStorage.setItem('mixr-version-bar', on ? '1' : '0');
+});
+
 // ─── ColorEngine ───────────────────────────────────────────────────────────
 const COLORS = {
   red:     { r: 230, g:  35, b:  35, name: 'Red' },
@@ -592,7 +619,8 @@ const bubbles = Array.from({length:16}, () => ({
 }));
 
 function drawBg() {
-  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  bgCtx.fillStyle = '#FFF8EE';
+  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
   bubbles.forEach(b => {
     bgCtx.save(); bgCtx.globalAlpha = b.alpha; bgCtx.fillStyle = b.color;
     bgCtx.beginPath(); bgCtx.arc(b.x, b.y, b.r, 0, Math.PI*2); bgCtx.fill(); bgCtx.restore();
@@ -785,7 +813,14 @@ function flyBlobToBowl(blobEl, colorName) {
       ParticleSystem.burst(endX, endY, c.r, c.g, c.b, 22);
       BowlState.addColor(colorName);
       updateSelectedDots();
-      if (BowlState.addedColors.length === 1) SoundEngine.shimmer();
+      if (BowlState.addedColors.length === 1) {
+        SoundEngine.shimmer();
+        const mix = BowlState.currentMix;
+        resultLabel.textContent = mix.emoji + ' ' + mix.name;
+        resultLabel.classList.add('visible');
+      } else {
+        resultLabel.classList.remove('visible');
+      }
       return;
     }
     const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
@@ -822,7 +857,13 @@ function updateSelectedDots() {
       e.stopPropagation();
       BowlState.removeColor(i);
       updateSelectedDots();
-      if (BowlState.addedColors.length === 0) resultLabel.classList.remove('visible');
+      if (BowlState.addedColors.length === 0) {
+        resultLabel.classList.remove('visible');
+      } else {
+        const mix = BowlState.currentMix;
+        resultLabel.textContent = mix.emoji + ' ' + mix.name;
+        resultLabel.classList.add('visible');
+      }
     });
     selectedDotsEl.appendChild(dot);
   });
