@@ -273,6 +273,7 @@ const COLORS = {
   pink:    { r: 255, g: 100, b: 150, name: 'Pink' },
   brown:   { r: 150, g:  75, b:  25, name: 'Brown' },
   white:   { r: 245, g: 242, b: 238, name: 'White' },
+  grey:    { r: 148, g: 144, b: 140, name: 'Grey' },
   black:   { r:  45, g:  38, b:  35, name: 'Black' },
 };
 
@@ -280,7 +281,7 @@ const COLOR_GROUPS = [
   ['red', 'orange', 'yellow'],
   ['green', 'cyan', 'blue'],
   ['purple', 'magenta', 'pink'],
-  ['brown', 'white', 'black'],
+  ['brown', 'white', 'grey', 'black'],
 ];
 
 const MIX_TABLE = {
@@ -311,6 +312,8 @@ const MIX_TABLE = {
   'pink+white':     { r: 255, g: 205, b: 225, name: 'Blush!',         emoji: '🌷' },
   'brown+white':    { r: 220, g: 190, b: 160, name: 'Tan!',           emoji: '🏖️' },
   'black+white':    { r: 145, g: 140, b: 135, name: 'Grey!',          emoji: '🌫️' },
+  'black+grey':     { r:  85, g:  82, b:  78, name: 'Dark Grey!',     emoji: '🌑' },
+  'grey+white':     { r: 205, g: 202, b: 198, name: 'Light Grey!',    emoji: '❄️' },
   // Shades (colour + black)
   'black+red':      { r: 140, g:  20, b:  20, name: 'Dark Red!',      emoji: '🌹' },
   'black+orange':   { r: 140, g:  78, b:  25, name: 'Brown!',         emoji: '🟤' },
@@ -328,7 +331,7 @@ const SINGLE_EMOJI = {
   red: '❤️', orange: '🍊', yellow: '💛',
   green: '🌱', cyan: '💎', blue: '💙',
   purple: '🍇', magenta: '🌺', pink: '💗',
-  brown: '🟤', white: '🤍', black: '🖤',
+  brown: '🟤', white: '🤍', grey: '🌫️', black: '🖤',
 };
 
 function colorFamily(name) { return name; }
