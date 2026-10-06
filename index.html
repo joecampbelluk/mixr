@@ -34,7 +34,6 @@
     padding: 16px 16px 20px;
   }
 
-  /* Background canvas */
   #bgCanvas {
     position: fixed;
     top: 0; left: 0;
@@ -43,7 +42,6 @@
     z-index: 0;
   }
 
-  /* Title */
   #title {
     position: relative;
     z-index: 2;
@@ -55,7 +53,6 @@
   }
   #title span { color: var(--coral); }
 
-  /* Bowl area */
   #bowl-area {
     position: relative;
     z-index: 2;
@@ -70,7 +67,6 @@
     cursor: default;
   }
 
-  /* Result label */
   #result-label {
     position: absolute;
     bottom: -10px;
@@ -89,7 +85,6 @@
   }
   #result-label.visible { transform: translateX(-50%) scale(1); }
 
-  /* Particle layer */
   #particleCanvas {
     position: fixed;
     top: 0; left: 0;
@@ -98,7 +93,6 @@
     z-index: 10;
   }
 
-  /* Flash overlay */
   #flash {
     position: fixed;
     top: 0; left: 0;
@@ -109,20 +103,59 @@
     transition: opacity 0.08s ease;
   }
 
-  /* Color blobs row */
-  #blob-row {
+  /* Bottom row: scroll wrapper + reset button side by side */
+  #bottom-row {
     position: relative;
     z-index: 2;
     display: flex;
-    gap: clamp(10px, 3vw, 22px);
     align-items: center;
-    justify-content: center;
+    gap: clamp(8px, 2.5vw, 16px);
+    width: 100%;
+  }
+
+  /* Scroll wrapper clips the row and fades at edges */
+  #blob-scroll-wrapper {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
+  #blob-scroll-wrapper::before,
+  #blob-scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 28px;
+    z-index: 1;
+    pointer-events: none;
+  }
+  #blob-scroll-wrapper::before {
+    left: 0;
+    background: linear-gradient(to right, var(--cream) 10%, transparent);
+  }
+  #blob-scroll-wrapper::after {
+    right: 0;
+    background: linear-gradient(to left, var(--cream) 10%, transparent);
+  }
+
+  #blob-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     padding: 4px 0;
+  }
+  #blob-scroll::-webkit-scrollbar { display: none; }
+
+  #blob-row {
+    display: flex;
+    gap: clamp(8px, 2vw, 14px);
+    padding: 0 12px;
+    width: max-content;
+    align-items: center;
   }
 
   .blob {
-    width: clamp(72px, 16vw, 112px);
-    height: clamp(72px, 16vw, 112px);
+    width: clamp(64px, 15vw, 100px);
+    height: clamp(64px, 15vw, 100px);
     border-radius: 50%;
     border: none;
     cursor: pointer;
@@ -135,23 +168,25 @@
   }
   .blob:active { transform: scale(0.92); }
 
-  .blob[data-color="red"]    { background: radial-gradient(circle at 38% 35%, #ff8a7a, #E8392A 60%, #b02010); }
-  .blob[data-color="yellow"] { background: radial-gradient(circle at 38% 35%, #ffe97a, #F5C518 60%, #c49a00); }
-  .blob[data-color="blue"]   { background: radial-gradient(circle at 38% 35%, #7a9fff, #2B4CCC 60%, #1a2f88); }
-  .blob[data-color="white"]  { background: radial-gradient(circle at 38% 35%, #ffffff, #e8e0d8 60%, #ccc4bc); box-shadow: 0 6px 20px rgba(0,0,0,0.14), inset 0 -4px 8px rgba(0,0,0,0.08), inset 0 4px 8px rgba(255,255,255,0.8); }
-  .blob[data-color="black"]  { background: radial-gradient(circle at 38% 35%, #777, #333 60%, #111); }
+  /* Group dividers between color families */
+  .blob-divider {
+    width: 2px;
+    height: clamp(48px, 11vw, 72px);
+    background: rgba(0,0,0,0.08);
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
 
   /* Reset button */
   #reset-btn {
-    position: relative;
-    z-index: 2;
-    width: clamp(60px, 14vw, 88px);
-    height: clamp(60px, 14vw, 88px);
+    flex-shrink: 0;
+    width: clamp(56px, 13vw, 80px);
+    height: clamp(56px, 13vw, 80px);
     border-radius: 50%;
     background: var(--coral);
     border: none;
     cursor: pointer;
-    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-size: clamp(1.4rem, 4.5vw, 2.2rem);
     box-shadow: 0 5px 18px rgba(255,107,107,0.45);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     -webkit-tap-highlight-color: transparent;
@@ -160,24 +195,12 @@
   }
   #reset-btn:active { transform: scale(0.9); box-shadow: 0 3px 10px rgba(255,107,107,0.35); }
 
-  /* Flying blob clone */
   .flying-blob {
     position: fixed;
     border-radius: 50%;
     pointer-events: none;
     z-index: 20;
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  }
-
-  /* Bottom row layout */
-  #bottom-row {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(10px, 3vw, 22px);
-    width: 100%;
   }
 </style>
 </head>
@@ -195,12 +218,12 @@
   </div>
 
   <div id="bottom-row">
-    <div id="blob-row">
-      <button class="blob" data-color="red"    aria-label="red paint"></button>
-      <button class="blob" data-color="yellow" aria-label="yellow paint"></button>
-      <button class="blob" data-color="blue"   aria-label="blue paint"></button>
-      <button class="blob" data-color="white"  aria-label="white paint"></button>
-      <button class="blob" data-color="black"  aria-label="black paint"></button>
+    <div id="blob-scroll-wrapper">
+      <div id="blob-scroll">
+        <div id="blob-row">
+          <!-- generated by JS -->
+        </div>
+      </div>
     </div>
     <button id="reset-btn" aria-label="clear bowl">🧹</button>
   </div>
@@ -209,14 +232,35 @@
 <script>
 // ─── ColorEngine ───────────────────────────────────────────────────────────
 const COLORS = {
-  red:    { r: 232, g:  57, b:  42, hex: '#E8392A' },
-  yellow: { r: 245, g: 197, b:  24, hex: '#F5C518' },
-  blue:   { r:  43, g:  76, b: 204, hex: '#2B4CCC' },
-  white:  { r: 240, g: 235, b: 228, hex: '#F0EBE4' },
-  black:  { r:  50, g:  44, b:  40, hex: '#322C28' },
+  'light-red':    { r: 255, g: 153, b: 153, name: 'Pink' },
+  red:            { r: 232, g:  57, b:  42, name: 'Red' },
+  'dark-red':     { r: 139, g:  26, b:  16, name: 'Crimson' },
+
+  'light-yellow': { r: 255, g: 240, b: 160, name: 'Cream' },
+  yellow:         { r: 245, g: 197, b:  24, name: 'Yellow' },
+  'dark-yellow':  { r: 184, g: 130, b:   8, name: 'Amber' },
+
+  'light-blue':   { r: 148, g: 186, b: 255, name: 'Sky' },
+  blue:           { r:  43, g:  76, b: 204, name: 'Blue' },
+  'dark-blue':    { r:  10, g:  26, b: 107, name: 'Navy' },
+
+  'light-white':  { r: 255, g: 253, b: 250, name: 'Snow' },
+  white:          { r: 240, g: 235, b: 228, name: 'Ivory' },
+  'dark-white':   { r: 190, g: 182, b: 174, name: 'Silver' },
+
+  'light-black':  { r: 136, g: 128, b: 120, name: 'Grey' },
+  black:          { r:  50, g:  44, b:  40, name: 'Black' },
+  'dark-black':   { r:  10, g:   8, b:   6, name: 'Jet' },
 };
 
-// Canonical mix results for known combinations (key = sorted names joined)
+const COLOR_GROUPS = [
+  ['light-red',    'red',   'dark-red'],
+  ['light-yellow', 'yellow','dark-yellow'],
+  ['light-blue',   'blue',  'dark-blue'],
+  ['light-white',  'white', 'dark-white'],
+  ['light-black',  'black', 'dark-black'],
+];
+
 const MIX_TABLE = {
   'blue+red':    { r: 140, g:  35, b: 150, name: 'Purple!',     emoji: '🍇' },
   'red+yellow':  { r: 240, g: 110, b:  20, name: 'Orange!',     emoji: '🍊' },
@@ -230,22 +274,38 @@ const MIX_TABLE = {
   'black+white': { r: 145, g: 140, b: 135, name: 'Grey!',       emoji: '🌫️' },
 };
 
+const SINGLE_EMOJI = {
+  'light-red': '🌸', red: '❤️', 'dark-red': '🌹',
+  'light-yellow': '🌼', yellow: '💛', 'dark-yellow': '🍂',
+  'light-blue': '💧', blue: '💙', 'dark-blue': '🌊',
+  'light-white': '❄️', white: '🤍', 'dark-white': '🪨',
+  'light-black': '🌫️', black: '🖤', 'dark-black': '🌑',
+};
+
+function colorFamily(name) {
+  if (name.includes('red'))    return 'red';
+  if (name.includes('yellow')) return 'yellow';
+  if (name.includes('blue'))   return 'blue';
+  if (name.includes('white'))  return 'white';
+  if (name.includes('black'))  return 'black';
+  return name;
+}
+
 function mixColors(colorNames) {
   const unique = [...new Set(colorNames)];
   if (unique.length === 1) {
     const c = COLORS[unique[0]];
-    const names = { red:'Red!', yellow:'Yellow!', blue:'Blue!', white:'White!', black:'Black!' };
-    const emojis = { red:'❤️', yellow:'💛', blue:'💙', white:'🤍', black:'🖤' };
-    return { r: c.r, g: c.g, b: c.b, name: names[unique[0]], emoji: emojis[unique[0]] };
+    return { r: c.r, g: c.g, b: c.b, name: c.name + '!', emoji: SINGLE_EMOJI[unique[0]] || '🎨' };
   }
 
-  // Check for 3+ primaries → brown/mud
-  const primaries = unique.filter(c => ['red','yellow','blue'].includes(c));
-  if (primaries.length >= 3) {
+  // 3+ primary families → mud
+  const families = new Set(unique.map(colorFamily));
+  const primaryFamilies = ['red','yellow','blue'].filter(f => families.has(f));
+  if (primaryFamilies.length >= 3) {
     return { r: 120, g: 80, b: 45, name: 'Mud!', emoji: '💩' };
   }
 
-  // Check 2-color canonical table
+  // 2-color canonical table (original keys only)
   if (unique.length === 2) {
     const key = unique.slice().sort().join('+');
     if (MIX_TABLE[key]) return MIX_TABLE[key];
@@ -261,7 +321,13 @@ function mixColors(colorNames) {
 }
 
 function rgbStr(r, g, b, a=1) { return `rgba(${r},${g},${b},${a})`; }
-function rgbHex(r, g, b) { return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join(''); }
+
+function blobGradient(r, g, b) {
+  const hi = `rgb(${Math.min(255,r+70)},${Math.min(255,g+70)},${Math.min(255,b+70)})`;
+  const mid = `rgb(${r},${g},${b})`;
+  const lo  = `rgb(${Math.max(0,r-55)},${Math.max(0,g-55)},${Math.max(0,b-55)})`;
+  return `radial-gradient(circle at 38% 35%, ${hi}, ${mid} 60%, ${lo})`;
+}
 
 // ─── SoundEngine ────────────────────────────────────────────────────────────
 const SoundEngine = (() => {
@@ -299,12 +365,12 @@ const SoundEngine = (() => {
 
 // ─── BowlState ──────────────────────────────────────────────────────────────
 const BowlState = {
-  addedColors: [],   // all taps including duplicates
-  currentMix: null,  // { r, g, b, name, emoji }
-  animState: 'idle', // idle | swirling | celebrating | draining
-  swirlProgress: 0,  // 0..1
-  drainProgress: 0,  // 0..1
-  celebProgress: 0,  // 0..1
+  addedColors: [],
+  currentMix: null,
+  animState: 'idle',
+  swirlProgress: 0,
+  drainProgress: 0,
+  celebProgress: 0,
   swirlAngle: 0,
 
   addColor(name) {
@@ -400,10 +466,9 @@ const particleCtx = particleCanvas.getContext('2d');
 const flashEl = document.getElementById('flash');
 const resultLabel = document.getElementById('result-label');
 
-let bowlR = 110; // radius, set on resize
-let bowlCX, bowlCY; // center in viewport coords
+let bowlR = 110;
+let bowlCX, bowlCY;
 
-// Background bubbles
 const bubbles = Array.from({length: 16}, () => ({
   x: Math.random() * window.innerWidth,
   y: window.innerHeight + Math.random() * window.innerHeight,
@@ -439,7 +504,6 @@ function drawBowl() {
   const state = BowlState;
   const mix = state.currentMix;
 
-  // Bowl shadow
   bowlCtx.save();
   bowlCtx.shadowColor = 'rgba(0,0,0,0.18)';
   bowlCtx.shadowBlur = 24;
@@ -450,7 +514,6 @@ function drawBowl() {
   bowlCtx.fill();
   bowlCtx.restore();
 
-  // Bowl base (ceramic look)
   const ceramicGrad = bowlCtx.createRadialGradient(cx - bowlR*0.3, cy - bowlR*0.3, 2, cx, cy, bowlR);
   ceramicGrad.addColorStop(0, '#FFFFFF');
   ceramicGrad.addColorStop(0.7, '#F0EBE4');
@@ -461,7 +524,6 @@ function drawBowl() {
   bowlCtx.fill();
 
   if (state.animState === 'idle' && mix) {
-    // Filled with mix color
     bowlCtx.save();
     bowlCtx.beginPath();
     bowlCtx.arc(cx, cy, bowlR - 6, 0, Math.PI*2);
@@ -487,7 +549,6 @@ function drawBowl() {
     bowlCtx.clip();
 
     if (colors.length >= 1 && mix) {
-      // Draw swirling arcs
       colors.forEach((name, i) => {
         const c = COLORS[name];
         const offset = (i / colors.length) * Math.PI * 2;
@@ -504,7 +565,6 @@ function drawBowl() {
         bowlCtx.restore();
       });
 
-      // Blend result color in from center
       if (p > 0.3) {
         const alpha = (p - 0.3) / 0.7;
         const resultR = (bowlR - 6) * Math.min(1, alpha * 1.4);
@@ -522,11 +582,9 @@ function drawBowl() {
       state.celebProgress = 0;
       ParticleSystem.celebrate(bowlCX, bowlCY, mix.r, mix.g, mix.b);
       SoundEngine.fanfare();
-      // Flash
       flashEl.style.background = rgbStr(mix.r, mix.g, mix.b);
       flashEl.style.opacity = '0.22';
       setTimeout(() => { flashEl.style.opacity = '0'; }, 120);
-      // Label
       resultLabel.textContent = mix.emoji + ' ' + mix.name;
       resultLabel.classList.add('visible');
     }
@@ -544,7 +602,6 @@ function drawBowl() {
       fillGrad.addColorStop(1, rgbStr(mix.r, mix.g, mix.b));
       bowlCtx.fillStyle = fillGrad;
       bowlCtx.fillRect(0, 0, bowlCanvas.width, bowlCanvas.height);
-      // Glow ring during celebration
       if (state.celebProgress < 0.6) {
         const glowAlpha = (0.6 - state.celebProgress) / 0.6;
         bowlCtx.restore();
@@ -570,14 +627,12 @@ function drawBowl() {
       bowlCtx.beginPath();
       bowlCtx.arc(cx, cy, bowlR - 6, 0, Math.PI*2);
       bowlCtx.clip();
-      // Shrinking vortex
       const rr = (bowlR - 6) * (1 - p);
       const angle = p * Math.PI * 8;
       bowlCtx.strokeStyle = rgbStr(mix.r, mix.g, mix.b, 1 - p);
       bowlCtx.lineWidth = 10 * (1 - p) + 2;
       bowlCtx.lineCap = 'round';
       bowlCtx.beginPath();
-      // Spiral
       for (let a=0; a < Math.PI*4; a += 0.15) {
         const sr = rr * (1 - a / (Math.PI*4));
         const sx = cx + Math.cos(angle + a) * sr;
@@ -593,7 +648,6 @@ function drawBowl() {
     }
   }
 
-  // Idle ripple when empty
   if (state.animState === 'idle' && !mix) {
     const t = Date.now() / 1000;
     const rippleR = bowlR * 0.3 + Math.sin(t * 1.8) * bowlR * 0.06;
@@ -606,14 +660,12 @@ function drawBowl() {
     bowlCtx.restore();
   }
 
-  // Bowl rim highlight
   bowlCtx.save();
   bowlCtx.strokeStyle = 'rgba(255,255,255,0.65)';
   bowlCtx.lineWidth = 4;
   bowlCtx.beginPath();
   bowlCtx.arc(cx - 4, cy - 4, bowlR - 4, Math.PI * 1.1, Math.PI * 1.7);
   bowlCtx.stroke();
-  // Rim shadow
   bowlCtx.strokeStyle = 'rgba(0,0,0,0.08)';
   bowlCtx.lineWidth = 3;
   bowlCtx.beginPath();
@@ -628,13 +680,36 @@ function drawParticles() {
   ParticleSystem.draw(particleCtx);
 }
 
-// Idle blob pulse using CSS
+// ─── Generate Blobs ──────────────────────────────────────────────────────────
+const blobRow = document.getElementById('blob-row');
+COLOR_GROUPS.forEach((group, gi) => {
+  if (gi > 0) {
+    const div = document.createElement('div');
+    div.className = 'blob-divider';
+    blobRow.appendChild(div);
+  }
+  group.forEach(colorName => {
+    const c = COLORS[colorName];
+    const btn = document.createElement('button');
+    btn.className = 'blob';
+    btn.dataset.color = colorName;
+    btn.setAttribute('aria-label', c.name + ' paint');
+    btn.style.background = blobGradient(c.r, c.g, c.b);
+    // Extra inner glow for very light blobs so they still look 3D
+    if (c.r + c.g + c.b > 680) {
+      btn.style.boxShadow = '0 6px 20px rgba(0,0,0,0.14), inset 0 -4px 8px rgba(0,0,0,0.08), inset 0 4px 8px rgba(255,255,255,0.9)';
+    }
+    blobRow.appendChild(btn);
+  });
+});
+
+// ─── Blob pulse animation ────────────────────────────────────────────────────
 let pulseT = 0;
-const blobs = document.querySelectorAll('.blob');
+const blobEls = Array.from(document.querySelectorAll('.blob'));
 function pulseBlobsFrame() {
   pulseT += 0.03;
-  blobs.forEach((b, i) => {
-    const phase = i * (Math.PI * 2 / blobs.length);
+  blobEls.forEach((b, i) => {
+    const phase = i * (Math.PI * 2 / blobEls.length);
     const scale = 1 + Math.sin(pulseT + phase) * 0.05;
     b.style.transform = `scale(${scale.toFixed(3)})`;
   });
@@ -657,24 +732,14 @@ function flyBlobToBowl(blobEl, colorName) {
   const endX = bowlCX;
   const endY = bowlCY;
 
-  // Clone
+  const c = COLORS[colorName];
   const clone = document.createElement('div');
   clone.className = 'flying-blob';
   clone.style.cssText = `
     width: ${size}px; height: ${size}px;
     left: ${startX - size/2}px; top: ${startY - size/2}px;
-    background: ${blobEl.style.background || window.getComputedStyle(blobEl).background};
-    box-shadow: ${window.getComputedStyle(blobEl).boxShadow};
+    background: ${blobGradient(c.r, c.g, c.b)};
   `;
-  // Copy gradient from computed style via class data attribute
-  const cssMap = {
-    red:    'radial-gradient(circle at 38% 35%, #ff8a7a, #E8392A 60%, #b02010)',
-    yellow: 'radial-gradient(circle at 38% 35%, #ffe97a, #F5C518 60%, #c49a00)',
-    blue:   'radial-gradient(circle at 38% 35%, #7a9fff, #2B4CCC 60%, #1a2f88)',
-    white:  'radial-gradient(circle at 38% 35%, #ffffff, #e8e0d8 60%, #ccc4bc)',
-    black:  'radial-gradient(circle at 38% 35%, #777, #333 60%, #111)',
-  };
-  clone.style.background = cssMap[colorName] || '#888';
   document.body.appendChild(clone);
 
   const dur = 380;
@@ -684,17 +749,13 @@ function flyBlobToBowl(blobEl, colorName) {
     let t = (now - start) / dur;
     if (t >= 1) {
       document.body.removeChild(clone);
-      // Plop + particle burst
       SoundEngine.plop();
-      const c = COLORS[colorName];
       ParticleSystem.burst(endX, endY, c.r, c.g, c.b, 22);
       BowlState.addColor(colorName);
       if (BowlState.addedColors.length === 1) SoundEngine.shimmer();
       return;
     }
-    // Ease in-out
     const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-    // Control point for bezier arc (above midpoint)
     const cp = { x: (startX + endX) / 2, y: Math.min(startY, endY) - 80 };
     const x = (1-e)*(1-e)*startX + 2*(1-e)*e*cp.x + e*e*endX;
     const y = (1-e)*(1-e)*startY + 2*(1-e)*e*cp.y + e*e*endY;
@@ -708,7 +769,7 @@ function flyBlobToBowl(blobEl, colorName) {
 }
 
 // ─── EventHandlers ──────────────────────────────────────────────────────────
-blobs.forEach(blob => {
+blobEls.forEach(blob => {
   blob.addEventListener('pointerdown', e => {
     e.preventDefault();
     SoundEngine.bloop();
