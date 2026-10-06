@@ -293,16 +293,16 @@ const COLOR_GROUPS = [
 
 // Only used for exact 1:1 canonical mixes of the original 5 colours
 const MIX_TABLE = {
-  'blue+red':     { name: 'Purple!',   emoji: '🍇' },
-  'red+yellow':   { name: 'Orange!',   emoji: '🍊' },
-  'blue+yellow':  { name: 'Green!',    emoji: '🐸' },
-  'red+white':    { name: 'Pink!',     emoji: '🌸' },
-  'blue+white':   { name: 'Sky Blue!', emoji: '☁️' },
-  'white+yellow': { name: 'Lemon!',    emoji: '🌼' },
-  'black+red':    { name: 'Dark Red!', emoji: '🌹' },
-  'black+blue':   { name: 'Dark Blue!',emoji: '🫐' },
-  'black+yellow': { name: 'Olive!',    emoji: '🫒' },
-  'black+white':  { name: 'Grey!',     emoji: '🌫️' },
+  'blue+red':     { r: 110, g:  30, b: 145, name: 'Purple!',   emoji: '🍇' },
+  'red+yellow':   { r: 235, g:  95, b:  15, name: 'Orange!',   emoji: '🍊' },
+  'blue+yellow':  { r:  50, g: 155, b:  50, name: 'Green!',    emoji: '🐸' },
+  'red+white':    { r: 245, g: 150, b: 165, name: 'Pink!',     emoji: '🌸' },
+  'blue+white':   { r: 115, g: 180, b: 230, name: 'Sky Blue!', emoji: '☁️' },
+  'white+yellow': { r: 252, g: 248, b: 130, name: 'Lemon!',    emoji: '🌼' },
+  'black+red':    { r: 115, g:  18, b:  15, name: 'Dark Red!', emoji: '🌹' },
+  'black+blue':   { r:  22, g:  35, b: 110, name: 'Dark Blue!',emoji: '🫐' },
+  'black+yellow': { r:  88, g: 100, b:  28, name: 'Olive!',    emoji: '🫒' },
+  'black+white':  { r: 140, g: 135, b: 130, name: 'Grey!',     emoji: '🌫️' },
 };
 
 const SINGLE_EMOJI = {
@@ -377,12 +377,14 @@ function mixColors(colorNames) {
     return { r: c.r, g: c.g, b: c.b, name: c.name + '!', emoji: SINGLE_EMOJI[unique[0]] || '🎨' };
   }
 
-  // Always use weighted RGB average — so adding more of one colour gradually shifts the result
-  let r = 0, g = 0, b = 0;
-  colorNames.forEach(n => { const c = COLORS[n]; r += c.r; g += c.g; b += c.b; });
-  r = Math.round(r / colorNames.length);
-  g = Math.round(g / colorNames.length);
-  b = Math.round(b / colorNames.length);
+  // Kubelka-Munk subtractive mixing — simulates paint pigment absorption
+  function km(c) { const v = Math.max(1, c) / 255; return (1 - v) * (1 - v) / (2 * v); }
+  function kmInv(k) { return Math.round(Math.max(0, Math.min(255, (1 + k - Math.sqrt(k * k + 2 * k)) * 255))); }
+  let kr = 0, kg = 0, kb = 0;
+  colorNames.forEach(n => { const c = COLORS[n]; kr += km(c.r); kg += km(c.g); kb += km(c.b); });
+  const r = kmInv(kr / colorNames.length);
+  const g = kmInv(kg / colorNames.length);
+  const b = kmInv(kb / colorNames.length);
 
   // 3+ primary families → mud
   const families = new Set(unique.map(colorFamily));
