@@ -299,10 +299,10 @@ const MIX_TABLE = {
   'red+white':    { r: 245, g: 150, b: 165, name: 'Pink!',     emoji: '🌸' },
   'blue+white':   { r: 115, g: 180, b: 230, name: 'Sky Blue!', emoji: '☁️' },
   'white+yellow': { r: 252, g: 248, b: 130, name: 'Lemon!',    emoji: '🌼' },
-  'black+red':    { r: 115, g:  18, b:  15, name: 'Dark Red!', emoji: '🌹' },
-  'black+blue':   { r:  22, g:  35, b: 110, name: 'Dark Blue!',emoji: '🫐' },
-  'black+yellow': { r:  88, g: 100, b:  28, name: 'Olive!',    emoji: '🫒' },
-  'black+white':  { r: 140, g: 135, b: 130, name: 'Grey!',     emoji: '🌫️' },
+  'black+red':    { r: 155, g:  28, b:  22, name: 'Dark Red!', emoji: '🌹' },
+  'black+blue':   { r:  35, g:  60, b: 160, name: 'Dark Blue!',emoji: '🫐' },
+  'black+yellow': { r: 105, g: 120, b:  28, name: 'Olive!',    emoji: '🫒' },
+  'black+white':  { r: 145, g: 140, b: 135, name: 'Grey!',     emoji: '🌫️' },
 };
 
 const SINGLE_EMOJI = {
@@ -369,6 +369,10 @@ function nameColor(r, g, b) {
   return { name: prefix + hue + '!', emoji };
 }
 
+// Kubelka-Munk helpers — must live outside mixColors to avoid parameter name clash with forEach
+function kmAbsorb(v) { const n = Math.max(1, v) / 255; return (1 - n) * (1 - n) / (2 * n); }
+function kmReflect(k) { return Math.round(Math.max(0, Math.min(255, (1 + k - Math.sqrt(k * k + 2 * k)) * 255))); }
+
 function mixColors(colorNames) {
   const unique = [...new Set(colorNames)];
 
@@ -378,13 +382,10 @@ function mixColors(colorNames) {
   }
 
   // Kubelka-Munk subtractive mixing — simulates paint pigment absorption
-  function km(c) { const v = Math.max(1, c) / 255; return (1 - v) * (1 - v) / (2 * v); }
-  function kmInv(k) { return Math.round(Math.max(0, Math.min(255, (1 + k - Math.sqrt(k * k + 2 * k)) * 255))); }
   let kr = 0, kg = 0, kb = 0;
-  colorNames.forEach(n => { const c = COLORS[n]; kr += km(c.r); kg += km(c.g); kb += km(c.b); });
-  const r = kmInv(kr / colorNames.length);
-  const g = kmInv(kg / colorNames.length);
-  const b = kmInv(kb / colorNames.length);
+  colorNames.forEach(n => { const c = COLORS[n]; kr += kmAbsorb(c.r); kg += kmAbsorb(c.g); kb += kmAbsorb(c.b); });
+  const n = colorNames.length;
+  let r = kmReflect(kr / n), g = kmReflect(kg / n), b = kmReflect(kb / n);
 
   // 3+ primary families → mud
   const families = new Set(unique.map(colorFamily));
