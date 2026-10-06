@@ -53,8 +53,6 @@
     color: #333;
     letter-spacing: -1px;
     margin-top: 4px;
-    /* leave room for the fixed reset button on the right */
-    padding-right: clamp(60px, 14vw, 90px);
     width: 100%;
     text-align: center;
   }
@@ -114,12 +112,8 @@
     transition: opacity 0.08s ease;
   }
 
-  /* Reset button — fixed top-right */
+  /* Reset button — sits below the paint pots */
   #reset-btn {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 100;
     width: clamp(50px, 12vw, 72px);
     height: clamp(50px, 12vw, 72px);
     border-radius: 50%;
@@ -133,15 +127,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    margin: 10px auto 0;
   }
   #reset-btn svg { width: 52%; height: 52%; pointer-events: none; }
   #reset-btn:active { transform: scale(0.9); box-shadow: 0 3px 10px rgba(255,107,107,0.35); }
 
-  /* Bottom row — full width, just the blob scroller */
+  /* Bottom row — blob scroller + reset button stacked */
   #bottom-row {
     position: relative;
     z-index: 2;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   #blob-scroll-wrapper {
@@ -211,13 +210,35 @@
   }
 
   .sel-dot {
-    width: clamp(18px, 4vw, 28px);
-    height: clamp(18px, 4vw, 28px);
+    position: relative;
+    width: clamp(22px, 5vw, 32px);
+    height: clamp(22px, 5vw, 32px);
     border-radius: 50%;
     flex-shrink: 0;
     box-shadow: 0 3px 10px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3);
     animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
   }
+  .sel-dot::after {
+    content: '×';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 15px;
+    height: 15px;
+    background: rgba(60,40,30,0.65);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 11px;
+    line-height: 15px;
+    text-align: center;
+    pointer-events: none;
+  }
+  .sel-dot:active { transform: scale(0.85); }
 
   @keyframes popIn {
     from { transform: scale(0); opacity: 0; }
@@ -249,15 +270,14 @@
         </div>
       </div>
     </div>
+    <button id="reset-btn" aria-label="reset bowl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+    </button>
   </div>
 </div>
-
-<button id="reset-btn" aria-label="reset bowl">
-  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-    <path d="M3 3v5h5"/>
-  </svg>
-</button>
 
 <script>
 // ─── ColorEngine ───────────────────────────────────────────────────────────
@@ -472,6 +492,16 @@ const BowlState = {
     this.currentMix = mixColors(this.addedColors);
     if (this.addedColors.length >= 2 && this.animState !== 'draining') {
       this.animState = 'swirling';
+      this.swirlProgress = 0;
+    }
+  },
+
+  removeColor(index) {
+    if (this.animState === 'draining') return;
+    this.addedColors.splice(index, 1);
+    this.currentMix = this.addedColors.length > 0 ? mixColors(this.addedColors) : null;
+    if (this.addedColors.length < 2) {
+      this.animState = 'idle';
       this.swirlProgress = 0;
     }
   },
@@ -767,14 +797,22 @@ const blobScrollWrapper = document.getElementById('blob-scroll-wrapper');
 
 function updateSelectedDots() {
   selectedDotsEl.innerHTML = '';
-  BowlState.addedColors.forEach(name => {
+  BowlState.addedColors.forEach((name, i) => {
     const c = COLORS[name];
-    const dot = document.createElement('div');
+    const dot = document.createElement('button');
     dot.className = 'sel-dot';
     dot.style.background = blobGradient(c.r, c.g, c.b);
     if (c.r + c.g + c.b > 680) {
       dot.style.boxShadow = '0 3px 10px rgba(0,0,0,0.15), inset 0 2px 4px rgba(0,0,0,0.08)';
     }
+    dot.setAttribute('aria-label', `remove ${c.name}`);
+    dot.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      BowlState.removeColor(i);
+      updateSelectedDots();
+      if (BowlState.addedColors.length === 0) resultLabel.classList.remove('visible');
+    });
     selectedDotsEl.appendChild(dot);
   });
   blobScrollWrapper.style.display = BowlState.addedColors.length >= 3 ? 'none' : '';
