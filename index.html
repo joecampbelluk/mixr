@@ -609,7 +609,7 @@ let bowlCX, bowlCY;
 
 const bubbles = Array.from({length:16}, () => ({
   x: Math.random() * window.innerWidth,
-  y: window.innerHeight + Math.random() * window.innerHeight,
+  y: Math.random() * window.innerHeight,
   r: 12 + Math.random() * 40,
   speed: 0.2 + Math.random() * 0.5,
   color: ['#E62323','#FF7D00','#FFD700','#32B932','#2355D2','#9632C8'][Math.floor(Math.random()*6)],
