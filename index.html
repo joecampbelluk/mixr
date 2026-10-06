@@ -21,7 +21,7 @@
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
-    background: transparent;
+    background: #FFF8EE;
     font-family: 'Nunito', sans-serif;
   }
 
@@ -479,7 +479,7 @@ function blobGradient(r, g, b) {
   const hi  = `rgb(${Math.min(255,r+70)},${Math.min(255,g+70)},${Math.min(255,b+70)})`;
   const mid = `rgb(${r},${g},${b})`;
   const lo  = `rgb(${Math.max(0,r-55)},${Math.max(0,g-55)},${Math.max(0,b-55)})`;
-  return `radial-gradient(circle at 38% 35%, ${hi}, ${mid} 60%, ${lo})`;
+  return `radial-gradient(circle at 38% 35%, ${hi}, ${mid} 55%, ${lo} 80%, transparent)`;
 }
 
 // ─── SoundEngine ────────────────────────────────────────────────────────────
@@ -617,8 +617,7 @@ const bubbles = Array.from({length:16}, () => ({
 }));
 
 function drawBg() {
-  bgCtx.fillStyle = '#FFF8EE';
-  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
   bubbles.forEach(b => {
     bgCtx.save(); bgCtx.globalAlpha = b.alpha; bgCtx.fillStyle = b.color;
     bgCtx.beginPath(); bgCtx.arc(b.x, b.y, b.r, 0, Math.PI*2); bgCtx.fill(); bgCtx.restore();
