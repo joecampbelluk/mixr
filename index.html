@@ -73,12 +73,9 @@
   }
   #title span { color: var(--coral); }
 
-  /* Result label — sits above the bowl inside bowl-area */
+  /* Result label — first child of bowl-stack, always reserves height */
   #result-label {
-    position: absolute;
-    top: 6px;
-    left: 50%;
-    transform: translateX(-50%) scale(0);
+    transform: scale(0);
     transform-origin: center bottom;
     font-size: clamp(1.2rem, 4.5vw, 2rem);
     font-weight: 900;
@@ -92,7 +89,7 @@
     pointer-events: none;
     z-index: 3;
   }
-  #result-label.visible { transform: translateX(-50%) scale(1); }
+  #result-label.visible { transform: scale(1); }
 
   #bowl-area {
     position: relative;
@@ -221,7 +218,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 
   #selected-dots {
@@ -234,11 +231,11 @@
 
   .sel-dot {
     position: relative;
-    width: clamp(22px, 5vw, 32px);
-    height: clamp(22px, 5vw, 32px);
+    width: clamp(36px, 9vw, 52px);
+    height: clamp(36px, 9vw, 52px);
     border-radius: 50%;
     flex-shrink: 0;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3);
     animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
     border: none;
     cursor: pointer;
@@ -251,13 +248,13 @@
     position: absolute;
     top: -5px;
     right: -5px;
-    width: 15px;
-    height: 15px;
+    width: 17px;
+    height: 17px;
     background: rgba(60,40,30,0.65);
     color: #fff;
     border-radius: 50%;
-    font-size: 11px;
-    line-height: 15px;
+    font-size: 12px;
+    line-height: 17px;
     text-align: center;
     pointer-events: none;
   }
@@ -280,10 +277,10 @@
 
   <div id="bowl-area">
     <div id="bowl-stack">
+      <div id="result-label"></div>
       <canvas id="bowlCanvas"></canvas>
       <div id="selected-dots"></div>
     </div>
-    <div id="result-label"></div>
   </div>
 
   <div id="bottom-row">
@@ -605,6 +602,7 @@ const particleCanvas= document.getElementById('particleCanvas');
 const particleCtx   = particleCanvas.getContext('2d');
 const flashEl       = document.getElementById('flash');
 const resultLabel   = document.getElementById('result-label');
+resultLabel.textContent = ' ';
 
 let bowlR = 110;
 let bowlCX, bowlCY;
@@ -794,9 +792,12 @@ function tick() { drawBg(); pulseBlobsFrame(); drawBowl(); drawParticles(); requ
 // ─── FlyAnimation ───────────────────────────────────────────────────────────
 function flyBlobToBowl(blobEl, colorName) {
   const blobRect = blobEl.getBoundingClientRect();
+  const canvasRect = bowlCanvas.getBoundingClientRect();
   const size = blobRect.width;
   const startX = blobRect.left + size/2, startY = blobRect.top + size/2;
-  const endX = bowlCX, endY = bowlCY;
+  const endX = canvasRect.left + canvasRect.width / 2;
+  const endY = canvasRect.top + canvasRect.height / 2;
+  bowlCX = endX; bowlCY = endY;
   const c = COLORS[colorName];
 
   const clone = document.createElement('div');
@@ -928,8 +929,11 @@ function onResize() {
   const dim = (bowlR + 6) * 2;
   bowlCanvas.width = dim;
   bowlCanvas.height = dim;
-  bowlCX = rect.left + rect.width / 2;
-  bowlCY = rect.top + rect.height / 2;
+  requestAnimationFrame(() => {
+    const cr = bowlCanvas.getBoundingClientRect();
+    bowlCX = cr.left + cr.width / 2;
+    bowlCY = cr.top + cr.height / 2;
+  });
 }
 
 window.addEventListener('resize', onResize);
