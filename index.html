@@ -287,7 +287,7 @@ const COLORS = {
   'dark-pink':    { r: 197, g:  17, b:  98, name: 'Magenta' },
 
   'light-purple': { r: 200, g: 162, b: 232, name: 'Lavender' },
-  purple:         { r: 128, g:   0, b: 128, name: 'Purple' },
+  purple:         { r: 153, g:  51, b: 204, name: 'Purple' },
   'dark-purple':  { r:  75, g:   0, b: 130, name: 'Indigo' },
 
   'light-green':  { r: 152, g: 230, b: 152, name: 'Mint' },
@@ -308,9 +308,9 @@ const COLOR_GROUPS = [
 
 // Only used for exact 1:1 canonical mixes of the original 5 colours
 const MIX_TABLE = {
-  'blue+red':     { r: 110, g:  30, b: 145, name: 'Purple!',   emoji: '🍇' },
-  'red+yellow':   { r: 235, g:  95, b:  15, name: 'Orange!',   emoji: '🍊' },
-  'blue+yellow':  { r:  50, g: 155, b:  50, name: 'Green!',    emoji: '🐸' },
+  'blue+red':     { r: 148, g:  48, b: 200, name: 'Purple!',   emoji: '🍇' },
+  'red+yellow':   { r: 255, g: 128, b:   0, name: 'Orange!',   emoji: '🍊' },
+  'blue+yellow':  { r:  68, g: 188, b:  68, name: 'Green!',    emoji: '🐸' },
   'red+white':    { r: 245, g: 150, b: 165, name: 'Pink!',     emoji: '🌸' },
   'blue+white':   { r: 115, g: 180, b: 230, name: 'Sky Blue!', emoji: '☁️' },
   'white+yellow': { r: 252, g: 248, b: 130, name: 'Lemon!',    emoji: '🌼' },
@@ -378,7 +378,7 @@ function nameColor(r, g, b) {
   else if (h < 28)               { hue = 'Red Orange';   emoji = '🔶';  }
   else if (h < 50)               { hue = 'Orange';       emoji = '🍊';  }
   else if (h < 68)               { hue = 'Yellow';       emoji = '💛';  }
-  else if (h < 82)               { hue = 'Yellow Green'; emoji = '🌿';  }
+  else if (h < 100)              { hue = 'Lime';         emoji = '🍏';  }
   else if (h < 155)              { hue = 'Green';        emoji = '🐸';  }
   else if (h < 175)              { hue = 'Teal';         emoji = '🌊';  }
   else if (h < 200)              { hue = 'Cyan';         emoji = '💎';  }
@@ -402,16 +402,19 @@ function mixColors(colorNames) {
     return { r: c.r, g: c.g, b: c.b, name: c.name + '!', emoji: SINGLE_EMOJI[unique[0]] || '🎨' };
   }
 
-  // Kubelka-Munk subtractive mixing — simulates paint pigment absorption
-  let kr = 0, kg = 0, kb = 0;
-  colorNames.forEach(n => { const c = COLORS[n]; kr += kmAbsorb(c.r); kg += kmAbsorb(c.g); kb += kmAbsorb(c.b); });
-  const n = colorNames.length;
-  let r = kmReflect(kr / n), g = kmReflect(kg / n), b = kmReflect(kb / n);
+  // Sequential Kubelka-Munk: each new colour mixes 1:1 with the running result
+  let { r, g, b } = COLORS[colorNames[0]];
+  for (let i = 1; i < colorNames.length; i++) {
+    const c = COLORS[colorNames[i]];
+    r = kmReflect((kmAbsorb(r) + kmAbsorb(c.r)) / 2);
+    g = kmReflect((kmAbsorb(g) + kmAbsorb(c.g)) / 2);
+    b = kmReflect((kmAbsorb(b) + kmAbsorb(c.b)) / 2);
+  }
 
   // 3+ primary families → mud
   const families = new Set(unique.map(colorFamily));
   if (['red','yellow','blue'].filter(f => families.has(f)).length >= 3) {
-    return { r, g, b, name: 'Mud!', emoji: '💩' };
+    return { r, g, b, name: 'Brown!', emoji: '🟤' };
   }
 
   // Exact 1:1 of two original colours → canonical name
