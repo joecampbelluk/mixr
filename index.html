@@ -284,37 +284,44 @@ const COLOR_GROUPS = [
 ];
 
 const MIX_TABLE = {
-  // Primary mixes → secondaries
-  'blue+red':       { r: 148, g:  48, b: 200, name: 'Purple!',      emoji: '🍇' },
-  'red+yellow':     { r: 255, g: 128, b:   0, name: 'Orange!',      emoji: '🍊' },
-  'blue+yellow':    { r:  68, g: 188, b:  68, name: 'Green!',       emoji: '🐸' },
-  // Complementary pairs → brown
-  'blue+orange':    { r: 120, g:  88, b:  52, name: 'Brown!',       emoji: '🟤' },
-  'green+red':      { r: 122, g:  88, b:  48, name: 'Brown!',       emoji: '🟤' },
-  'purple+yellow':  { r: 138, g:  98, b:  52, name: 'Brown!',       emoji: '🟤' },
+  // Primary RYB mixes
+  'blue+red':       { r: 148, g:  48, b: 200, name: 'Purple!',        emoji: '🍇' },
+  'red+yellow':     { r: 255, g: 128, b:   0, name: 'Orange!',        emoji: '🍊' },
+  'blue+yellow':    { r:  68, g: 188, b:  68, name: 'Green!',         emoji: '🐸' },
+  // Printing Crew / CMY mixes
+  'cyan+yellow':    { r:  68, g: 188, b:  68, name: 'Green!',         emoji: '🐸' },
+  'cyan+magenta':   { r:  35, g:  85, b: 210, name: 'Blue!',          emoji: '💙' },
+  'magenta+yellow': { r: 230, g:  35, b:  35, name: 'Red!',           emoji: '❤️' },
+  // Intermediate / rainbow colours
+  'blue+purple':    { r: 100, g:  50, b: 215, name: 'Violet!',        emoji: '💜' },
+  'green+yellow':   { r: 140, g: 215, b:   0, name: 'Lime!',          emoji: '🍏' },
+  // Many Mixes Make Brown
+  'blue+orange':    { r: 120, g:  88, b:  52, name: 'Brown!',         emoji: '🟤' },
+  'green+red':      { r: 122, g:  88, b:  48, name: 'Brown!',         emoji: '🟤' },
+  'purple+yellow':  { r: 138, g:  98, b:  52, name: 'Brown!',         emoji: '🟤' },
   // Tints (colour + white)
-  'red+white':      { r: 255, g: 155, b: 155, name: 'Pink!',        emoji: '🌸' },
-  'orange+white':   { r: 255, g: 210, b: 175, name: 'Peach!',       emoji: '🍑' },
-  'white+yellow':   { r: 255, g: 245, b: 145, name: 'Lemon!',       emoji: '🌼' },
-  'green+white':    { r: 175, g: 235, b: 175, name: 'Mint!',        emoji: '🌿' },
-  'blue+white':     { r: 115, g: 175, b: 235, name: 'Sky Blue!',    emoji: '☁️' },
-  'cyan+white':     { r: 175, g: 238, b: 245, name: 'Ice Blue!',    emoji: '🧊' },
-  'purple+white':   { r: 210, g: 170, b: 235, name: 'Lavender!',    emoji: '💜' },
-  'magenta+white':  { r: 255, g: 175, b: 225, name: 'Orchid!',      emoji: '🌸' },
-  'pink+white':     { r: 255, g: 205, b: 225, name: 'Blush!',       emoji: '🌷' },
-  'brown+white':    { r: 220, g: 190, b: 160, name: 'Tan!',         emoji: '🏖️' },
-  'black+white':    { r: 145, g: 140, b: 135, name: 'Grey!',        emoji: '🌫️' },
+  'red+white':      { r: 255, g: 155, b: 155, name: 'Pink!',          emoji: '🌸' },
+  'orange+white':   { r: 255, g: 208, b: 170, name: 'Light Orange!',  emoji: '🍊' },
+  'white+yellow':   { r: 255, g: 242, b: 145, name: 'Light Yellow!',  emoji: '💛' },
+  'green+white':    { r: 175, g: 235, b: 175, name: 'Light Green!',   emoji: '🌿' },
+  'blue+white':     { r: 115, g: 175, b: 235, name: 'Sky Blue!',      emoji: '☁️' },
+  'cyan+white':     { r: 175, g: 238, b: 245, name: 'Ice Blue!',      emoji: '🧊' },
+  'purple+white':   { r: 210, g: 170, b: 235, name: 'Lilac!',         emoji: '🌸' },
+  'magenta+white':  { r: 255, g: 175, b: 225, name: 'Orchid!',        emoji: '🌺' },
+  'pink+white':     { r: 255, g: 205, b: 225, name: 'Blush!',         emoji: '🌷' },
+  'brown+white':    { r: 220, g: 190, b: 160, name: 'Tan!',           emoji: '🏖️' },
+  'black+white':    { r: 145, g: 140, b: 135, name: 'Grey!',          emoji: '🌫️' },
   // Shades (colour + black)
-  'black+red':      { r: 140, g:  20, b:  20, name: 'Dark Red!',    emoji: '🌹' },
-  'black+orange':   { r: 120, g:  55, b:   5, name: 'Rust!',        emoji: '🍂' },
-  'black+yellow':   { r: 105, g: 120, b:  28, name: 'Olive!',       emoji: '🫒' },
-  'black+green':    { r:  25, g:  95, b:  25, name: 'Forest!',      emoji: '🌲' },
-  'black+cyan':     { r:   0, g: 105, b: 120, name: 'Teal!',        emoji: '🌊' },
-  'black+blue':     { r:  20, g:  45, b: 150, name: 'Navy!',        emoji: '🫐' },
-  'black+purple':   { r:  75, g:  20, b: 115, name: 'Indigo!',      emoji: '🔮' },
-  'black+magenta':  { r: 115, g:  10, b:  80, name: 'Plum!',        emoji: '🍇' },
-  'black+pink':     { r: 160, g:  45, b:  90, name: 'Berry!',       emoji: '🍓' },
-  'black+brown':    { r:  65, g:  32, b:  10, name: 'Chocolate!',   emoji: '🍫' },
+  'black+red':      { r: 140, g:  20, b:  20, name: 'Dark Red!',      emoji: '🌹' },
+  'black+orange':   { r: 140, g:  78, b:  25, name: 'Brown!',         emoji: '🟤' },
+  'black+yellow':   { r: 175, g: 145, b:   5, name: 'Dark Yellow!',   emoji: '🌾' },
+  'black+green':    { r:  25, g:  95, b:  25, name: 'Dark Green!',    emoji: '🌲' },
+  'black+cyan':     { r:   0, g: 105, b: 120, name: 'Teal!',          emoji: '🌊' },
+  'black+blue':     { r:  15, g:  50, b: 165, name: 'Deep Blue!',     emoji: '🫐' },
+  'black+purple':   { r:  75, g:  20, b: 115, name: 'Dark Purple!',   emoji: '🔮' },
+  'black+magenta':  { r: 115, g:  10, b:  80, name: 'Plum!',          emoji: '🍇' },
+  'black+pink':     { r: 160, g:  45, b:  90, name: 'Berry!',         emoji: '🍓' },
+  'black+brown':    { r:  65, g:  32, b:  10, name: 'Chocolate!',     emoji: '🍫' },
 };
 
 const SINGLE_EMOJI = {
