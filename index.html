@@ -262,86 +262,69 @@
 <script>
 // ─── ColorEngine ───────────────────────────────────────────────────────────
 const COLORS = {
-  'light-red':    { r: 255, g: 153, b: 153, name: 'Pink' },
-  red:            { r: 232, g:  57, b:  42, name: 'Red' },
-  'dark-red':     { r: 139, g:  26, b:  16, name: 'Crimson' },
-
-  'light-yellow': { r: 255, g: 240, b: 160, name: 'Cream' },
-  yellow:         { r: 245, g: 197, b:  24, name: 'Yellow' },
-  'dark-yellow':  { r: 184, g: 130, b:   8, name: 'Amber' },
-
-  'light-blue':   { r: 148, g: 186, b: 255, name: 'Sky' },
-  blue:           { r:  43, g:  76, b: 204, name: 'Blue' },
-  'dark-blue':    { r:  10, g:  26, b: 107, name: 'Navy' },
-
-  'light-white':  { r: 255, g: 253, b: 250, name: 'Snow' },
-  white:          { r: 240, g: 235, b: 228, name: 'Ivory' },
-  'dark-white':   { r: 190, g: 182, b: 174, name: 'Silver' },
-
-  'light-black':  { r: 136, g: 128, b: 120, name: 'Grey' },
-  black:          { r:  50, g:  44, b:  40, name: 'Black' },
-  'dark-black':   { r:  10, g:   8, b:   6, name: 'Jet' },
-
-  'light-pink':   { r: 255, g: 192, b: 203, name: 'Blush' },
-  pink:           { r: 255, g: 105, b: 155, name: 'Pink' },
-  'dark-pink':    { r: 197, g:  17, b:  98, name: 'Magenta' },
-
-  'light-purple': { r: 200, g: 162, b: 232, name: 'Lavender' },
-  purple:         { r: 153, g:  51, b: 204, name: 'Purple' },
-  'dark-purple':  { r:  75, g:   0, b: 130, name: 'Indigo' },
-
-  'light-green':  { r: 152, g: 230, b: 152, name: 'Mint' },
-  green:          { r:  76, g: 175, b:  80, name: 'Green' },
-  'dark-green':   { r:  27, g:  94, b:  32, name: 'Forest' },
+  red:     { r: 230, g:  35, b:  35, name: 'Red' },
+  orange:  { r: 255, g: 125, b:   0, name: 'Orange' },
+  yellow:  { r: 255, g: 215, b:   0, name: 'Yellow' },
+  green:   { r:  50, g: 185, b:  50, name: 'Green' },
+  cyan:    { r:   0, g: 195, b: 215, name: 'Cyan' },
+  blue:    { r:  35, g:  85, b: 210, name: 'Blue' },
+  purple:  { r: 150, g:  50, b: 200, name: 'Purple' },
+  magenta: { r: 220, g:  20, b: 145, name: 'Magenta' },
+  pink:    { r: 255, g: 100, b: 150, name: 'Pink' },
+  brown:   { r: 150, g:  75, b:  25, name: 'Brown' },
+  white:   { r: 245, g: 242, b: 238, name: 'White' },
+  black:   { r:  45, g:  38, b:  35, name: 'Black' },
 };
 
 const COLOR_GROUPS = [
-  ['light-red',    'red',    'dark-red'],
-  ['light-pink',   'pink',   'dark-pink'],
-  ['light-yellow', 'yellow', 'dark-yellow'],
-  ['light-green',  'green',  'dark-green'],
-  ['light-blue',   'blue',   'dark-blue'],
-  ['light-purple', 'purple', 'dark-purple'],
-  ['light-white',  'white',  'dark-white'],
-  ['light-black',  'black',  'dark-black'],
+  ['red', 'orange', 'yellow'],
+  ['green', 'cyan', 'blue'],
+  ['purple', 'magenta', 'pink'],
+  ['brown', 'white', 'black'],
 ];
 
-// Only used for exact 1:1 canonical mixes of the original 5 colours
 const MIX_TABLE = {
-  'blue+red':     { r: 148, g:  48, b: 200, name: 'Purple!',   emoji: '🍇' },
-  'red+yellow':   { r: 255, g: 128, b:   0, name: 'Orange!',   emoji: '🍊' },
-  'blue+yellow':  { r:  68, g: 188, b:  68, name: 'Green!',    emoji: '🐸' },
-  'red+white':    { r: 245, g: 150, b: 165, name: 'Pink!',     emoji: '🌸' },
-  'blue+white':   { r: 115, g: 180, b: 230, name: 'Sky Blue!', emoji: '☁️' },
-  'white+yellow': { r: 252, g: 248, b: 130, name: 'Lemon!',    emoji: '🌼' },
-  'black+red':    { r: 155, g:  28, b:  22, name: 'Dark Red!', emoji: '🌹' },
-  'black+blue':   { r:  35, g:  60, b: 160, name: 'Dark Blue!',emoji: '🫐' },
-  'black+yellow': { r: 105, g: 120, b:  28, name: 'Olive!',    emoji: '🫒' },
-  'black+white':  { r: 145, g: 140, b: 135, name: 'Grey!',     emoji: '🌫️' },
+  // Primary mixes → secondaries
+  'blue+red':       { r: 148, g:  48, b: 200, name: 'Purple!',      emoji: '🍇' },
+  'red+yellow':     { r: 255, g: 128, b:   0, name: 'Orange!',      emoji: '🍊' },
+  'blue+yellow':    { r:  68, g: 188, b:  68, name: 'Green!',       emoji: '🐸' },
+  // Complementary pairs → brown
+  'blue+orange':    { r: 120, g:  88, b:  52, name: 'Brown!',       emoji: '🟤' },
+  'green+red':      { r: 122, g:  88, b:  48, name: 'Brown!',       emoji: '🟤' },
+  'purple+yellow':  { r: 138, g:  98, b:  52, name: 'Brown!',       emoji: '🟤' },
+  // Tints (colour + white)
+  'red+white':      { r: 255, g: 155, b: 155, name: 'Pink!',        emoji: '🌸' },
+  'orange+white':   { r: 255, g: 210, b: 175, name: 'Peach!',       emoji: '🍑' },
+  'white+yellow':   { r: 255, g: 245, b: 145, name: 'Lemon!',       emoji: '🌼' },
+  'green+white':    { r: 175, g: 235, b: 175, name: 'Mint!',        emoji: '🌿' },
+  'blue+white':     { r: 115, g: 175, b: 235, name: 'Sky Blue!',    emoji: '☁️' },
+  'cyan+white':     { r: 175, g: 238, b: 245, name: 'Ice Blue!',    emoji: '🧊' },
+  'purple+white':   { r: 210, g: 170, b: 235, name: 'Lavender!',    emoji: '💜' },
+  'magenta+white':  { r: 255, g: 175, b: 225, name: 'Orchid!',      emoji: '🌸' },
+  'pink+white':     { r: 255, g: 205, b: 225, name: 'Blush!',       emoji: '🌷' },
+  'brown+white':    { r: 220, g: 190, b: 160, name: 'Tan!',         emoji: '🏖️' },
+  'black+white':    { r: 145, g: 140, b: 135, name: 'Grey!',        emoji: '🌫️' },
+  // Shades (colour + black)
+  'black+red':      { r: 140, g:  20, b:  20, name: 'Dark Red!',    emoji: '🌹' },
+  'black+orange':   { r: 120, g:  55, b:   5, name: 'Rust!',        emoji: '🍂' },
+  'black+yellow':   { r: 105, g: 120, b:  28, name: 'Olive!',       emoji: '🫒' },
+  'black+green':    { r:  25, g:  95, b:  25, name: 'Forest!',      emoji: '🌲' },
+  'black+cyan':     { r:   0, g: 105, b: 120, name: 'Teal!',        emoji: '🌊' },
+  'black+blue':     { r:  20, g:  45, b: 150, name: 'Navy!',        emoji: '🫐' },
+  'black+purple':   { r:  75, g:  20, b: 115, name: 'Indigo!',      emoji: '🔮' },
+  'black+magenta':  { r: 115, g:  10, b:  80, name: 'Plum!',        emoji: '🍇' },
+  'black+pink':     { r: 160, g:  45, b:  90, name: 'Berry!',       emoji: '🍓' },
+  'black+brown':    { r:  65, g:  32, b:  10, name: 'Chocolate!',   emoji: '🍫' },
 };
 
 const SINGLE_EMOJI = {
-  'light-red': '🌸', red: '❤️', 'dark-red': '🌹',
-  'light-pink': '🌷', pink: '💗', 'dark-pink': '🌺',
-  'light-yellow': '🌼', yellow: '💛', 'dark-yellow': '🍂',
-  'light-green': '🌿', green: '🌱', 'dark-green': '🌲',
-  'light-blue': '💧', blue: '💙', 'dark-blue': '🌊',
-  'light-purple': '💜', purple: '🔮', 'dark-purple': '🍇',
-  'light-white': '❄️', white: '🤍', 'dark-white': '🪨',
-  'light-black': '🌫️', black: '🖤', 'dark-black': '🌑',
+  red: '❤️', orange: '🍊', yellow: '💛',
+  green: '🌱', cyan: '💎', blue: '💙',
+  purple: '🍇', magenta: '🌺', pink: '💗',
+  brown: '🟤', white: '🤍', black: '🖤',
 };
 
-function colorFamily(name) {
-  if (name.includes('red'))    return 'red';
-  if (name.includes('pink'))   return 'pink';
-  if (name.includes('yellow')) return 'yellow';
-  if (name.includes('green'))  return 'green';
-  if (name.includes('blue'))   return 'blue';
-  if (name.includes('purple')) return 'purple';
-  if (name.includes('white'))  return 'white';
-  if (name.includes('black'))  return 'black';
-  return name;
-}
+function colorFamily(name) { return name; }
 
 // Name any RGB colour using HSL classification
 function nameColor(r, g, b) {
@@ -555,7 +538,7 @@ const bubbles = Array.from({length:16}, () => ({
   y: window.innerHeight + Math.random() * window.innerHeight,
   r: 12 + Math.random() * 40,
   speed: 0.2 + Math.random() * 0.5,
-  color: ['#E8392A','#F5C518','#2B4CCC','#9B2FA0','#3BA84A','#F07020'][Math.floor(Math.random()*6)],
+  color: ['#E62323','#FF7D00','#FFD700','#32B932','#2355D2','#9632C8'][Math.floor(Math.random()*6)],
   alpha: 0.04 + Math.random() * 0.08,
 }));
 
