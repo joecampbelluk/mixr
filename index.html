@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>mixr 🎨</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #FFF8EE;
+    --coral: #FF6B6B;
+    --shadow: rgba(0,0,0,0.12);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    background: var(--cream);
+    font-family: 'Nunito', sans-serif;
+  }
+
+  #app {
+    position: relative;
+    width: 100vw; height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 20px;
+  }
+
+  /* Background canvas */
+  #bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Title */
+  #title {
+    position: relative;
+    z-index: 2;
+    font-size: clamp(1.6rem, 6vw, 3rem);
+    font-weight: 900;
+    color: #333;
+    letter-spacing: -1px;
+    margin-top: 4px;
+  }
+  #title span { color: var(--coral); }
+
+  /* Bowl area */
+  #bowl-area {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+
+  #bowlCanvas {
+    border-radius: 50%;
+    cursor: default;
+  }
+
+  /* Result label */
+  #result-label {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    font-weight: 900;
+    color: #fff;
+    background: rgba(0,0,0,0.18);
+    padding: 6px 18px;
+    border-radius: 999px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+  }
+  #result-label.visible { transform: translateX(-50%) scale(1); }
+
+  /* Particle layer */
+  #particleCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Flash overlay */
+  #flash {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9;
+    opacity: 0;
+    transition: opacity 0.08s ease;
+  }
+
+  /* Color blobs row */
+  #blob-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: clamp(10px, 3vw, 22px);
+    align-items: center;
+    justify-content: center;
+    padding: 4px 0;
+  }
+
+  .blob {
+    width: clamp(72px, 16vw, 112px);
+    height: clamp(72px, 16vw, 112px);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18), inset 0 -4px 8px rgba(0,0,0,0.15), inset 0 4px 8px rgba(255,255,255,0.35);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  .blob:active { transform: scale(0.92); }
+
+  .blob[data-color="red"]    { background: radial-gradient(circle at 38% 35%, #ff8a7a, #E8392A 60%, #b02010); }
+  .blob[data-color="yellow"] { background: radial-gradient(circle at 38% 35%, #ffe97a, #F5C518 60%, #c49a00); }
+  .blob[data-color="blue"]   { background: radial-gradient(circle at 38% 35%, #7a9fff, #2B4CCC 60%, #1a2f88); }
+  .blob[data-color="white"]  { background: radial-gradient(circle at 38% 35%, #ffffff, #e8e0d8 60%, #ccc4bc); box-shadow: 0 6px 20px rgba(0,0,0,0.14), inset 0 -4px 8px rgba(0,0,0,0.08), inset 0 4px 8px rgba(255,255,255,0.8); }
+  .blob[data-color="black"]  { background: radial-gradient(circle at 38% 35%, #777, #333 60%, #111); }
+
+  /* Reset button */
+  #reset-btn {
+    position: relative;
+    z-index: 2;
+    width: clamp(60px, 14vw, 88px);
+    height: clamp(60px, 14vw, 88px);
+    border-radius: 50%;
+    background: var(--coral);
+    border: none;
+    cursor: pointer;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    box-shadow: 0 5px 18px rgba(255,107,107,0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #reset-btn:active { transform: scale(0.9); box-shadow: 0 3px 10px rgba(255,107,107,0.35); }
+
+  /* Flying blob clone */
+  .flying-blob {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 20;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  /* Bottom row layout */
+  #bottom-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(10px, 3vw, 22px);
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="particleCanvas"></canvas>
+  <div id="flash"></div>
+
+  <div id="title">mix<span>r</span> 🎨</div>
+
+  <div id="bowl-area">
+    <canvas id="bowlCanvas"></canvas>
+    <div id="result-label"></div>
+  </div>
+
+  <div id="bottom-row">
+    <div id="blob-row">
+      <button class="blob" data-color="red"    aria-label="red paint"></button>
+      <button class="blob" data-color="yellow" aria-label="yellow paint"></button>
+      <button class="blob" data-color="blue"   aria-label="blue paint"></button>
+      <button class="blob" data-color="white"  aria-label="white paint"></button>
+      <button class="blob" data-color="black"  aria-label="black paint"></button>
+    </div>
+    <button id="reset-btn" aria-label="clear bowl">🧹</button>
+  </div>
+</div>
+
+<script>
+// ─── ColorEngine ───────────────────────────────────────────────────────────
+const COLORS = {
+  red:    { r: 232, g:  57, b:  42, hex: '#E8392A' },
+  yellow: { r: 245, g: 197, b:  24, hex: '#F5C518' },
+  blue:   { r:  43, g:  76, b: 204, hex: '#2B4CCC' },
+  white:  { r: 240, g: 235, b: 228, hex: '#F0EBE4' },
+  black:  { r:  50, g:  44, b:  40, hex: '#322C28' },
+};
+
+// Canonical mix results for known combinations (key = sorted names joined)
+const MIX_TABLE = {
+  'blue+red':    { r: 140, g:  35, b: 150, name: 'Purple!',     emoji: '🍇' },
+  'red+yellow':  { r: 240, g: 110, b:  20, name: 'Orange!',     emoji: '🍊' },
+  'blue+yellow': { r:  40, g: 165, b:  60, name: 'Green!',      emoji: '🐸' },
+  'red+white':   { r: 248, g: 158, b: 170, name: 'Pink!',       emoji: '🌸' },
+  'blue+white':  { r: 130, g: 165, b: 235, name: 'Sky Blue!',   emoji: '☁️' },
+  'white+yellow':{ r: 250, g: 235, b: 150, name: 'Lemon!',      emoji: '🌼' },
+  'black+red':   { r: 130, g:  20, b:  15, name: 'Dark Red!',   emoji: '🌹' },
+  'black+blue':  { r:  20, g:  35, b: 110, name: 'Dark Blue!',  emoji: '🫐' },
+  'black+yellow':{ r: 110, g: 105, b:  10, name: 'Olive!',      emoji: '🫒' },
+  'black+white': { r: 145, g: 140, b: 135, name: 'Grey!',       emoji: '🌫️' },
+};
+
+function mixColors(colorNames) {
+  const unique = [...new Set(colorNames)];
+  if (unique.length === 1) {
+    const c = COLORS[unique[0]];
+    const names = { red:'Red!', yellow:'Yellow!', blue:'Blue!', white:'White!', black:'Black!' };
+    const emojis = { red:'❤️', yellow:'💛', blue:'💙', white:'🤍', black:'🖤' };
+    return { r: c.r, g: c.g, b: c.b, name: names[unique[0]], emoji: emojis[unique[0]] };
+  }
+
+  // Check for 3+ primaries → brown/mud
+  const primaries = unique.filter(c => ['red','yellow','blue'].includes(c));
+  if (primaries.length >= 3) {
+    return { r: 120, g: 80, b: 45, name: 'Mud!', emoji: '💩' };
+  }
+
+  // Check 2-color canonical table
+  if (unique.length === 2) {
+    const key = unique.slice().sort().join('+');
+    if (MIX_TABLE[key]) return MIX_TABLE[key];
+  }
+
+  // Fallback: weighted RGB average
+  let r=0, g=0, b=0;
+  colorNames.forEach(n => { const c = COLORS[n]; r+=c.r; g+=c.g; b+=c.b; });
+  r = Math.round(r / colorNames.length);
+  g = Math.round(g / colorNames.length);
+  b = Math.round(b / colorNames.length);
+  return { r, g, b, name: 'Mix!', emoji: '🎨' };
+}
+
+function rgbStr(r, g, b, a=1) { return `rgba(${r},${g},${b},${a})`; }
+function rgbHex(r, g, b) { return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join(''); }
+
+// ─── SoundEngine ────────────────────────────────────────────────────────────
+const SoundEngine = (() => {
+  let ctx = null;
+  function init() {
+    if (ctx) return;
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  function tone(freq, type, dur, vol=0.18, startTime=null) {
+    if (!ctx) return;
+    const t = startTime ?? ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.start(t); osc.stop(t + dur);
+  }
+  return {
+    init,
+    bloop() { init(); tone(520, 'sine', 0.12, 0.16); },
+    plop()  { init(); tone(160, 'triangle', 0.22, 0.22); tone(100, 'sine', 0.18, 0.1, ctx?.currentTime + 0.04); },
+    shimmer() {
+      init(); if (!ctx) return;
+      [440, 554, 659, 880].forEach((f, i) => tone(f, 'sine', 0.3, 0.12, ctx.currentTime + i * 0.08));
+    },
+    fanfare() {
+      init(); if (!ctx) return;
+      [[523,0],[659,0.1],[784,0.2],[1047,0.32]].forEach(([f,d]) => tone(f, 'triangle', 0.35, 0.14, ctx.currentTime + d));
+    },
+    whoosh() { init(); tone(200, 'sawtooth', 0.5, 0.08); }
+  };
+})();
+
+// ─── BowlState ──────────────────────────────────────────────────────────────
+const BowlState = {
+  addedColors: [],   // all taps including duplicates
+  currentMix: null,  // { r, g, b, name, emoji }
+  animState: 'idle', // idle | swirling | celebrating | draining
+  swirlProgress: 0,  // 0..1
+  drainProgress: 0,  // 0..1
+  celebProgress: 0,  // 0..1
+  swirlAngle: 0,
+
+  addColor(name) {
+    this.addedColors.push(name);
+    if (this.addedColors.length >= 1) {
+      this.currentMix = mixColors(this.addedColors);
+    }
+    if (this.addedColors.length >= 2 && this.animState !== 'draining') {
+      this.animState = 'swirling';
+      this.swirlProgress = 0;
+    }
+  },
+
+  reset() {
+    this.animState = 'draining';
+    this.drainProgress = 0;
+  },
+
+  onDrainComplete() {
+    this.addedColors = [];
+    this.currentMix = null;
+    this.animState = 'idle';
+    this.swirlProgress = 0;
+    this.drainProgress = 0;
+    this.celebProgress = 0;
+    this.swirlAngle = 0;
+  }
+};
+
+// ─── ParticleSystem ─────────────────────────────────────────────────────────
+const ParticleSystem = (() => {
+  const particles = [];
+
+  function spawn(x, y, r, g, b, vx, vy, size, life) {
+    particles.push({ x, y, r, g, b, vx, vy, size, life, maxLife: life });
+  }
+
+  function burst(x, y, r, g, b, count=20) {
+    for (let i=0; i<count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 5;
+      spawn(x, y, r, g, b, Math.cos(angle)*speed, Math.sin(angle)*speed - 1,
+            4 + Math.random()*8, 35 + Math.random()*20);
+    }
+  }
+
+  function celebrate(x, y, r, g, b) {
+    for (let i=0; i<60; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 9;
+      const cr = i%3===0 ? 255 : i%3===1 ? r : 255;
+      const cg = i%3===0 ? 215 : i%3===1 ? g : 255;
+      const cb = i%3===0 ? 0   : i%3===1 ? b : 100;
+      spawn(x, y, cr, cg, cb, Math.cos(angle)*speed, Math.sin(angle)*speed - 2,
+            5 + Math.random()*10, 50 + Math.random()*35);
+    }
+  }
+
+  function update() {
+    for (let i = particles.length-1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.18;
+      p.vx *= 0.97;
+      p.life--;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+
+  function draw(ctx) {
+    particles.forEach(p => {
+      const alpha = p.life / p.maxLife;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = rgbStr(p.r, p.g, p.b);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  return { burst, celebrate, update, draw };
+})();
+
+// ─── AnimationEngine ────────────────────────────────────────────────────────
+const bgCanvas = document.getElementById('bgCanvas');
+const bgCtx = bgCanvas.getContext('2d');
+const bowlCanvas = document.getElementById('bowlCanvas');
+const bowlCtx = bowlCanvas.getContext('2d');
+const particleCanvas = document.getElementById('particleCanvas');
+const particleCtx = particleCanvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+const resultLabel = document.getElementById('result-label');
+
+let bowlR = 110; // radius, set on resize
+let bowlCX, bowlCY; // center in viewport coords
+
+// Background bubbles
+const bubbles = Array.from({length: 16}, () => ({
+  x: Math.random() * window.innerWidth,
+  y: window.innerHeight + Math.random() * window.innerHeight,
+  r: 12 + Math.random() * 40,
+  speed: 0.2 + Math.random() * 0.5,
+  color: ['#E8392A','#F5C518','#2B4CCC','#9B2FA0','#3BA84A','#F07020'][Math.floor(Math.random()*6)],
+  alpha: 0.04 + Math.random() * 0.08,
+}));
+
+function drawBg() {
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  bubbles.forEach(b => {
+    bgCtx.save();
+    bgCtx.globalAlpha = b.alpha;
+    bgCtx.fillStyle = b.color;
+    bgCtx.beginPath();
+    bgCtx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    bgCtx.fill();
+    bgCtx.restore();
+    b.y -= b.speed;
+    if (b.y + b.r < 0) {
+      b.y = bgCanvas.height + b.r;
+      b.x = Math.random() * bgCanvas.width;
+    }
+  });
+}
+
+function drawBowl() {
+  const cx = bowlCanvas.width / 2;
+  const cy = bowlCanvas.height / 2;
+  bowlCtx.clearRect(0, 0, bowlCanvas.width, bowlCanvas.height);
+
+  const state = BowlState;
+  const mix = state.currentMix;
+
+  // Bowl shadow
+  bowlCtx.save();
+  bowlCtx.shadowColor = 'rgba(0,0,0,0.18)';
+  bowlCtx.shadowBlur = 24;
+  bowlCtx.shadowOffsetY = 8;
+  bowlCtx.fillStyle = '#F5F0EB';
+  bowlCtx.beginPath();
+  bowlCtx.arc(cx, cy, bowlR, 0, Math.PI*2);
+  bowlCtx.fill();
+  bowlCtx.restore();
+
+  // Bowl base (ceramic look)
+  const ceramicGrad = bowlCtx.createRadialGradient(cx - bowlR*0.3, cy - bowlR*0.3, 2, cx, cy, bowlR);
+  ceramicGrad.addColorStop(0, '#FFFFFF');
+  ceramicGrad.addColorStop(0.7, '#F0EBE4');
+  ceramicGrad.addColorStop(1, '#DDD5CC');
+  bowlCtx.fillStyle = ceramicGrad;
+  bowlCtx.beginPath();
+  bowlCtx.arc(cx, cy, bowlR, 0, Math.PI*2);
+  bowlCtx.fill();
+
+  if (state.animState === 'idle' && mix) {
+    // Filled with mix color
+    bowlCtx.save();
+    bowlCtx.beginPath();
+    bowlCtx.arc(cx, cy, bowlR - 6, 0, Math.PI*2);
+    bowlCtx.clip();
+    const fillGrad = bowlCtx.createRadialGradient(cx - bowlR*0.25, cy - bowlR*0.25, 2, cx, cy, bowlR);
+    fillGrad.addColorStop(0, rgbStr(Math.min(255, mix.r + 40), Math.min(255, mix.g + 40), Math.min(255, mix.b + 40)));
+    fillGrad.addColorStop(1, rgbStr(mix.r, mix.g, mix.b));
+    bowlCtx.fillStyle = fillGrad;
+    bowlCtx.fillRect(0, 0, bowlCanvas.width, bowlCanvas.height);
+    bowlCtx.restore();
+  }
+
+  if (state.animState === 'swirling') {
+    state.swirlProgress = Math.min(1, state.swirlProgress + 0.012);
+    state.swirlAngle += 0.07;
+
+    const colors = [...new Set(state.addedColors)];
+    const p = state.swirlProgress;
+
+    bowlCtx.save();
+    bowlCtx.beginPath();
+    bowlCtx.arc(cx, cy, bowlR - 6, 0, Math.PI*2);
+    bowlCtx.clip();
+
+    if (colors.length >= 1 && mix) {
+      // Draw swirling arcs
+      colors.forEach((name, i) => {
+        const c = COLORS[name];
+        const offset = (i / colors.length) * Math.PI * 2;
+        const arcFrac = Math.max(0.1, 1 - p * 0.7);
+        const r = (bowlR - 6) * (1 - p * 0.4);
+        bowlCtx.save();
+        bowlCtx.strokeStyle = rgbStr(c.r, c.g, c.b, 0.85);
+        bowlCtx.lineWidth = 18 + 10 * (1-p);
+        bowlCtx.lineCap = 'round';
+        bowlCtx.beginPath();
+        const startA = state.swirlAngle + offset;
+        bowlCtx.arc(cx, cy, r * 0.55, startA, startA + Math.PI * 2 * arcFrac);
+        bowlCtx.stroke();
+        bowlCtx.restore();
+      });
+
+      // Blend result color in from center
+      if (p > 0.3) {
+        const alpha = (p - 0.3) / 0.7;
+        const resultR = (bowlR - 6) * Math.min(1, alpha * 1.4);
+        const grad = bowlCtx.createRadialGradient(cx, cy, 0, cx, cy, resultR);
+        grad.addColorStop(0, rgbStr(mix.r, mix.g, mix.b, alpha));
+        grad.addColorStop(1, rgbStr(mix.r, mix.g, mix.b, 0));
+        bowlCtx.fillStyle = grad;
+        bowlCtx.fillRect(0, 0, bowlCanvas.width, bowlCanvas.height);
+      }
+    }
+    bowlCtx.restore();
+
+    if (state.swirlProgress >= 1) {
+      state.animState = 'celebrating';
+      state.celebProgress = 0;
+      ParticleSystem.celebrate(bowlCX, bowlCY, mix.r, mix.g, mix.b);
+      SoundEngine.fanfare();
+      // Flash
+      flashEl.style.background = rgbStr(mix.r, mix.g, mix.b);
+      flashEl.style.opacity = '0.22';
+      setTimeout(() => { flashEl.style.opacity = '0'; }, 120);
+      // Label
+      resultLabel.textContent = mix.emoji + ' ' + mix.name;
+      resultLabel.classList.add('visible');
+    }
+  }
+
+  if (state.animState === 'celebrating') {
+    state.celebProgress = Math.min(1, state.celebProgress + 0.016);
+    if (mix) {
+      bowlCtx.save();
+      bowlCtx.beginPath();
+      bowlCtx.arc(cx, cy, bowlR - 6, 0, Math.PI*2);
+      bowlCtx.clip();
+      const fillGrad = bowlCtx.createRadialGradient(cx - bowlR*0.25, cy - bowlR*0.25, 2, cx, cy, bowlR);
+      fillGrad.addColorStop(0, rgbStr(Math.min(255, mix.r + 50), Math.min(255, mix.g + 50), Math.min(255, mix.b + 50)));
+      fillGrad.addColorStop(1, rgbStr(mix.r, mix.g, mix.b));
+      bowlCtx.fillStyle = fillGrad;
+      bowlCtx.fillRect(0, 0, bowlCanvas.width, bowlCanvas.height);
+      // Glow ring during celebration
+      if (state.celebProgress < 0.6) {
+        const glowAlpha = (0.6 - state.celebProgress) / 0.6;
+        bowlCtx.restore();
+        bowlCtx.save();
+        bowlCtx.shadowColor = rgbStr(mix.r, mix.g, mix.b, glowAlpha);
+        bowlCtx.shadowBlur = 30 * glowAlpha;
+        bowlCtx.strokeStyle = rgbStr(mix.r, mix.g, mix.b, glowAlpha * 0.6);
+        bowlCtx.lineWidth = 6;
+        bowlCtx.beginPath();
+        bowlCtx.arc(cx, cy, bowlR + 2, 0, Math.PI*2);
+        bowlCtx.stroke();
+      }
+      bowlCtx.restore();
+    }
+    if (state.celebProgress >= 1) state.animState = 'idle';
+  }
+
+  if (state.animState === 'draining') {
+    state.drainProgress = Math.min(1, state.drainProgress + 0.018);
+    const p = state.drainProgress;
+    if (mix) {
+      bowlCtx.save();
+      bowlCtx.beginPath();
+      bowlCtx.arc(cx, cy, bowlR - 6, 0, Math.PI*2);
+      bowlCtx.clip();
+      // Shrinking vortex
+      const rr = (bowlR - 6) * (1 - p);
+      const angle = p * Math.PI * 8;
+      bowlCtx.strokeStyle = rgbStr(mix.r, mix.g, mix.b, 1 - p);
+      bowlCtx.lineWidth = 10 * (1 - p) + 2;
+      bowlCtx.lineCap = 'round';
+      bowlCtx.beginPath();
+      // Spiral
+      for (let a=0; a < Math.PI*4; a += 0.15) {
+        const sr = rr * (1 - a / (Math.PI*4));
+        const sx = cx + Math.cos(angle + a) * sr;
+        const sy = cy + Math.sin(angle + a) * sr;
+        if (a === 0) bowlCtx.moveTo(sx, sy); else bowlCtx.lineTo(sx, sy);
+      }
+      bowlCtx.stroke();
+      bowlCtx.restore();
+    }
+    if (state.drainProgress >= 1) {
+      state.onDrainComplete();
+      resultLabel.classList.remove('visible');
+    }
+  }
+
+  // Idle ripple when empty
+  if (state.animState === 'idle' && !mix) {
+    const t = Date.now() / 1000;
+    const rippleR = bowlR * 0.3 + Math.sin(t * 1.8) * bowlR * 0.06;
+    bowlCtx.save();
+    bowlCtx.strokeStyle = 'rgba(180,165,150,0.25)';
+    bowlCtx.lineWidth = 2;
+    bowlCtx.beginPath();
+    bowlCtx.arc(cx, cy, rippleR, 0, Math.PI*2);
+    bowlCtx.stroke();
+    bowlCtx.restore();
+  }
+
+  // Bowl rim highlight
+  bowlCtx.save();
+  bowlCtx.strokeStyle = 'rgba(255,255,255,0.65)';
+  bowlCtx.lineWidth = 4;
+  bowlCtx.beginPath();
+  bowlCtx.arc(cx - 4, cy - 4, bowlR - 4, Math.PI * 1.1, Math.PI * 1.7);
+  bowlCtx.stroke();
+  // Rim shadow
+  bowlCtx.strokeStyle = 'rgba(0,0,0,0.08)';
+  bowlCtx.lineWidth = 3;
+  bowlCtx.beginPath();
+  bowlCtx.arc(cx + 4, cy + 4, bowlR - 4, Math.PI * 0.1, Math.PI * 0.7);
+  bowlCtx.stroke();
+  bowlCtx.restore();
+}
+
+function drawParticles() {
+  particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+  ParticleSystem.update();
+  ParticleSystem.draw(particleCtx);
+}
+
+// Idle blob pulse using CSS
+let pulseT = 0;
+const blobs = document.querySelectorAll('.blob');
+function pulseBlobsFrame() {
+  pulseT += 0.03;
+  blobs.forEach((b, i) => {
+    const phase = i * (Math.PI * 2 / blobs.length);
+    const scale = 1 + Math.sin(pulseT + phase) * 0.05;
+    b.style.transform = `scale(${scale.toFixed(3)})`;
+  });
+}
+
+function tick() {
+  drawBg();
+  pulseBlobsFrame();
+  drawBowl();
+  drawParticles();
+  requestAnimationFrame(tick);
+}
+
+// ─── FlyAnimation ───────────────────────────────────────────────────────────
+function flyBlobToBowl(blobEl, colorName) {
+  const blobRect = blobEl.getBoundingClientRect();
+  const size = blobRect.width;
+  const startX = blobRect.left + size/2;
+  const startY = blobRect.top + size/2;
+  const endX = bowlCX;
+  const endY = bowlCY;
+
+  // Clone
+  const clone = document.createElement('div');
+  clone.className = 'flying-blob';
+  clone.style.cssText = `
+    width: ${size}px; height: ${size}px;
+    left: ${startX - size/2}px; top: ${startY - size/2}px;
+    background: ${blobEl.style.background || window.getComputedStyle(blobEl).background};
+    box-shadow: ${window.getComputedStyle(blobEl).boxShadow};
+  `;
+  // Copy gradient from computed style via class data attribute
+  const cssMap = {
+    red:    'radial-gradient(circle at 38% 35%, #ff8a7a, #E8392A 60%, #b02010)',
+    yellow: 'radial-gradient(circle at 38% 35%, #ffe97a, #F5C518 60%, #c49a00)',
+    blue:   'radial-gradient(circle at 38% 35%, #7a9fff, #2B4CCC 60%, #1a2f88)',
+    white:  'radial-gradient(circle at 38% 35%, #ffffff, #e8e0d8 60%, #ccc4bc)',
+    black:  'radial-gradient(circle at 38% 35%, #777, #333 60%, #111)',
+  };
+  clone.style.background = cssMap[colorName] || '#888';
+  document.body.appendChild(clone);
+
+  const dur = 380;
+  const start = performance.now();
+
+  function frame(now) {
+    let t = (now - start) / dur;
+    if (t >= 1) {
+      document.body.removeChild(clone);
+      // Plop + particle burst
+      SoundEngine.plop();
+      const c = COLORS[colorName];
+      ParticleSystem.burst(endX, endY, c.r, c.g, c.b, 22);
+      BowlState.addColor(colorName);
+      if (BowlState.addedColors.length === 1) SoundEngine.shimmer();
+      return;
+    }
+    // Ease in-out
+    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    // Control point for bezier arc (above midpoint)
+    const cp = { x: (startX + endX) / 2, y: Math.min(startY, endY) - 80 };
+    const x = (1-e)*(1-e)*startX + 2*(1-e)*e*cp.x + e*e*endX;
+    const y = (1-e)*(1-e)*startY + 2*(1-e)*e*cp.y + e*e*endY;
+    const scale = 1 + Math.sin(t * Math.PI) * 0.3;
+    clone.style.left = `${x - size/2}px`;
+    clone.style.top  = `${y - size/2}px`;
+    clone.style.transform = `scale(${scale})`;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ─── EventHandlers ──────────────────────────────────────────────────────────
+blobs.forEach(blob => {
+  blob.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    SoundEngine.bloop();
+    flyBlobToBowl(blob, blob.dataset.color);
+  });
+});
+
+document.getElementById('reset-btn').addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (BowlState.animState === 'draining') return;
+  if (BowlState.addedColors.length === 0 && BowlState.animState === 'idle') return;
+  SoundEngine.whoosh();
+  BowlState.reset();
+  resultLabel.classList.remove('visible');
+});
+
+// ─── Resize ──────────────────────────────────────────────────────────────────
+function onResize() {
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+  particleCanvas.width = window.innerWidth;
+  particleCanvas.height = window.innerHeight;
+
+  const bowlArea = document.getElementById('bowl-area');
+  const rect = bowlArea.getBoundingClientRect();
+  const maxR = Math.min(rect.width, rect.height) / 2 - 12;
+  bowlR = Math.max(80, Math.min(140, maxR));
+  const dim = (bowlR + 6) * 2;
+  bowlCanvas.width = dim;
+  bowlCanvas.height = dim;
+  bowlCX = rect.left + rect.width / 2;
+  bowlCY = rect.top + rect.height / 2;
+}
+
+window.addEventListener('resize', onResize);
+onResize();
+tick();
+</script>
+</body>
+</html>
