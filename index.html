@@ -830,11 +830,10 @@ function flyBlobToBowl(blobEl, colorName) {
 }
 
 // ─── EventHandlers ──────────────────────────────────────────────────────────
-const selectedDotsEl = document.getElementById('selected-dots');
+const selectedDotsEl  = document.getElementById('selected-dots');
 const blobScrollWrapper = document.getElementById('blob-scroll-wrapper');
-const blobScrollRowEl  = document.getElementById('blob-scroll-row');
-const resetBtnEl       = document.getElementById('reset-btn');
-const blobScrollEl     = document.getElementById('blob-scroll');
+const blobScrollRowEl = document.getElementById('blob-scroll-row');
+const resetBtnEl      = document.getElementById('reset-btn');
 
 function updateSelectedDots() {
   selectedDotsEl.innerHTML = '';
