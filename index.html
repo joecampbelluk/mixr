@@ -436,7 +436,6 @@ const MIX_TABLE = {
 
 const MIX_TABLE_3 = {
   // Reds & Crimsons
-  'orange+red+yellow':    { r: 242, g:  79, b:   1, name: 'Amber!',      emoji: '🍯' },
   'orange+pink+red':      { r: 237, g:  52, b:   4, name: 'Coral!',      emoji: '🪸' },
   'brown+orange+red':     { r: 193, g:  50, b:   4, name: 'Rust!',       emoji: '🍂' },
   'brown+red+white':      { r: 194, g:  72, b:  48, name: 'Terracotta!', emoji: '🏺' },
@@ -544,7 +543,28 @@ function kmAbsorb(v) { const n = Math.max(1, v) / 255; return (1 - n) * (1 - n) 
 function kmReflect(k) { return Math.round(Math.max(0, Math.min(255, (1 + k - Math.sqrt(k * k + 2 * k)) * 255))); }
 
 function mixColors(colorNames) {
-  const unique = [...new Set(colorNames)];
+  // Deduplicate, then reduce: if two colours mix (via MIX_TABLE) to produce a
+  // third colour already in the set, the pair is redundant — discard them.
+  // e.g. [red, yellow, orange] → red+yellow=orange already in set → [orange]
+  let unique = [...new Set(colorNames)];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    outer: for (let i = 0; i < unique.length; i++) {
+      for (let j = i + 1; j < unique.length; j++) {
+        const key = [unique[i], unique[j]].sort().join('+');
+        const entry = MIX_TABLE[key];
+        if (entry) {
+          const mixName = entry.name.replace(/!$/, '').toLowerCase();
+          if (unique.some((c, k) => k !== i && k !== j && c === mixName)) {
+            unique = unique.filter((_, k) => k !== i && k !== j);
+            changed = true;
+            break outer;
+          }
+        }
+      }
+    }
+  }
 
   if (unique.length === 1) {
     const c = COLORS[unique[0]];
@@ -552,9 +572,9 @@ function mixColors(colorNames) {
   }
 
   // Sequential Kubelka-Munk: each new colour mixes 1:1 with the running result
-  let { r, g, b } = COLORS[colorNames[0]];
-  for (let i = 1; i < colorNames.length; i++) {
-    const c = COLORS[colorNames[i]];
+  let { r, g, b } = COLORS[unique[0]];
+  for (let i = 1; i < unique.length; i++) {
+    const c = COLORS[unique[i]];
     r = kmReflect((kmAbsorb(r) + kmAbsorb(c.r)) / 2);
     g = kmReflect((kmAbsorb(g) + kmAbsorb(c.g)) / 2);
     b = kmReflect((kmAbsorb(b) + kmAbsorb(c.b)) / 2);
@@ -566,14 +586,14 @@ function mixColors(colorNames) {
     return { r, g, b, name: 'Brown!', emoji: '🟤' };
   }
 
-  // Exact 1:1 of two original colours → canonical name
-  if (colorNames.length === 2 && unique.length === 2) {
+  // Exact 2-colour mix → canonical name
+  if (unique.length === 2) {
     const key = unique.slice().sort().join('+');
     if (MIX_TABLE[key]) return { r, g, b, ...MIX_TABLE[key] };
   }
 
   // Exact 3-colour mix → canonical name
-  if (colorNames.length === 3 && unique.length === 3) {
+  if (unique.length === 3) {
     const key = unique.slice().sort().join('+');
     if (MIX_TABLE_3[key]) return { r, g, b, ...MIX_TABLE_3[key] };
   }
