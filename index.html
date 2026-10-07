@@ -21,8 +21,18 @@
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
-    background: linear-gradient(to top, #FFF8EE 0%, transparent 55%);
+    background: #FFF8EE;
     font-family: 'Nunito', sans-serif;
+  }
+
+  #app::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 38%;
+    background: linear-gradient(to top, #FFF8EE 20%, transparent 100%);
+    pointer-events: none;
+    z-index: 50;
   }
 
   #app {
