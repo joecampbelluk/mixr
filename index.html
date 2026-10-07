@@ -21,18 +21,8 @@
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
-    background: #fff;
+    background: #FFF8EE;
     font-family: 'Nunito', sans-serif;
-  }
-
-  #app::after {
-    content: '';
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    height: 50%;
-    background: linear-gradient(to top, #FFF8EE 15%, transparent 100%);
-    pointer-events: none;
-    z-index: 1;
   }
 
   #app {
@@ -677,6 +667,11 @@ const bubbles = Array.from({length:16}, () => ({
 
 function drawBg() {
   bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  const fadeGrad = bgCtx.createLinearGradient(0, bgCanvas.height, 0, bgCanvas.height * 0.5);
+  fadeGrad.addColorStop(0, '#FFF8EE');
+  fadeGrad.addColorStop(1, 'rgba(255,248,238,0)');
+  bgCtx.fillStyle = fadeGrad;
+  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
   bubbles.forEach(b => {
     bgCtx.save(); bgCtx.globalAlpha = b.alpha; bgCtx.fillStyle = b.color;
     bgCtx.beginPath(); bgCtx.arc(b.x, b.y, b.r, 0, Math.PI*2); bgCtx.fill(); bgCtx.restore();
