@@ -434,6 +434,55 @@ const MIX_TABLE = {
   'black+brown':    { r:  65, g:  32, b:  10, name: 'Chocolate!',     emoji: '🍫' },
 };
 
+const MIX_TABLE_3 = {
+  // Reds & Crimsons
+  'orange+red+yellow':    { r: 242, g:  79, b:   1, name: 'Amber!',      emoji: '🍯' },
+  'orange+pink+red':      { r: 237, g:  52, b:   4, name: 'Coral!',      emoji: '🪸' },
+  'brown+orange+red':     { r: 193, g:  50, b:   4, name: 'Rust!',       emoji: '🍂' },
+  'brown+red+white':      { r: 194, g:  72, b:  48, name: 'Terracotta!', emoji: '🏺' },
+  'magenta+purple+red':   { r: 191, g:  31, b:  56, name: 'Crimson!',    emoji: '🌹' },
+  'magenta+pink+red':     { r: 230, g:  34, b:  55, name: 'Strawberry!', emoji: '🍓' },
+  'pink+purple+red':      { r: 193, g:  46, b:  56, name: 'Rose!',       emoji: '🌷' },
+  'black+purple+red':     { r:  96, g:  39, b:  43, name: 'Maroon!',     emoji: '🍷' },
+  // Oranges & Golds
+  'orange+white+yellow':  { r: 250, g: 174, b:   1, name: 'Gold!',       emoji: '⭐' },
+  'orange+pink+white':    { r: 248, g: 140, b:   4, name: 'Apricot!',    emoji: '🍑' },
+  'pink+white+yellow':    { r: 250, g: 155, b:   2, name: 'Peach!',      emoji: '🍑' },
+  'brown+orange+white':   { r: 195, g: 123, b:   4, name: 'Caramel!',    emoji: '🍮' },
+  'grey+orange+yellow':   { r: 194, g: 159, b:   1, name: 'Mustard!',    emoji: '🌻' },
+  'brown+grey+white':     { r: 174, g: 127, b:  65, name: 'Sand!',       emoji: '🏖️' },
+  'brown+pink+white':     { r: 195, g: 115, b:  66, name: 'Copper!',     emoji: '🪙' },
+  'black+brown+red':      { r:  96, g:  41, b:  32, name: 'Mahogany!',   emoji: '🌰' },
+  // Yellow-Greens & Earth Greens
+  'green+orange+yellow':  { r: 106, g: 168, b:   1, name: 'Chartreuse!', emoji: '🌱' },
+  'blue+white+yellow':    { r:  85, g: 142, b:   2, name: 'Fern!',       emoji: '🌿' },
+  'brown+green+yellow':   { r: 103, g: 131, b:   2, name: 'Olive!',      emoji: '🫒' },
+  'brown+green+orange':   { r: 103, g: 112, b:   2, name: 'Khaki!',      emoji: '🪖' },
+  // Aquas & Sea Greens
+  'cyan+green+white':     { r:   4, g: 206, b: 106, name: 'Aqua!',       emoji: '💧' },
+  'blue+green+white':     { r:  65, g: 141, b: 106, name: 'Seafoam!',    emoji: '🌊' },
+  'blue+cyan+green':      { r:   4, g: 137, b:  76, name: 'Peacock!',    emoji: '🦚' },
+  'green+pink+white':     { r: 106, g: 154, b: 102, name: 'Sage!',       emoji: '🌿' },
+  'black+blue+green':     { r:  44, g:  77, b:  53, name: 'Pine!',       emoji: '🌲' },
+  // Blues
+  'blue+cyan+white':      { r:   4, g: 142, b: 222, name: 'Azure!',      emoji: '🔵' },
+  'cyan+pink+white':      { r:   4, g: 155, b: 192, name: 'Frost!',      emoji: '❄️' },
+  'blue+cyan+purple':     { r:   4, g:  68, b: 206, name: 'Periwinkle!', emoji: '🫐' },
+  // Blue-Purples
+  'blue+purple+white':    { r:  82, g:  91, b: 217, name: 'Lavender!',   emoji: '💜' },
+  'blue+pink+purple':     { r:  80, g:  64, b: 183, name: 'Slate!',      emoji: '🪨' },
+  'blue+magenta+pink':    { r:  85, g:  48, b: 158, name: 'Amethyst!',   emoji: '💎' },
+  'blue+magenta+purple':  { r:  80, g:  39, b: 181, name: 'Grape!',      emoji: '🍇' },
+  'black+blue+purple':    { r:  60, g:  51, b:  84, name: 'Midnight!',   emoji: '🌙' },
+  // Pink-Purples
+  'magenta+purple+white': { r: 193, g:  47, b: 187, name: 'Fuchsia!',    emoji: '🌺' },
+  'grey+purple+white':    { r: 174, g: 101, b: 183, name: 'Heather!',    emoji: '🌸' },
+  'grey+pink+white':      { r: 193, g: 146, b: 170, name: 'Dusty Rose!', emoji: '🌹' },
+  // Earthy / Special
+  'blue+brown+white':     { r:  82, g: 110, b:  66, name: 'Driftwood!',  emoji: '🪵' },
+  'cyan+magenta+yellow':  { r:   4, g:  57, b:   2, name: 'Ink!',        emoji: '🖤' },
+};
+
 const SINGLE_EMOJI = {
   red: '❤️', orange: '🍊', yellow: '💛',
   green: '🌱', cyan: '💎', blue: '💙',
@@ -521,6 +570,12 @@ function mixColors(colorNames) {
   if (colorNames.length === 2 && unique.length === 2) {
     const key = unique.slice().sort().join('+');
     if (MIX_TABLE[key]) return { r, g, b, ...MIX_TABLE[key] };
+  }
+
+  // Exact 3-colour mix → canonical name
+  if (colorNames.length === 3 && unique.length === 3) {
+    const key = unique.slice().sort().join('+');
+    if (MIX_TABLE_3[key]) return { r, g, b, ...MIX_TABLE_3[key] };
   }
 
   // Name the actual resulting colour
