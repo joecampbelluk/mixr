@@ -243,17 +243,32 @@
     -webkit-tap-highlight-color: transparent;
     outline: none;
   }
+  .sel-dot::after {
+    content: '×';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 17px;
+    height: 17px;
+    background: rgba(60,40,30,0.65);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 17px;
+    text-align: center;
+    pointer-events: none;
+  }
   .sel-dot:active { transform: scale(0.85); }
 
-  .sel-dot-refresh {
-    width: 22px;
-    height: 22px;
+  .refresh-all-btn {
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: none;
-    background: rgba(60,40,30,0.55);
+    background: rgba(60,40,30,0.5);
     color: #fff;
-    font-size: 13px;
-    line-height: 22px;
+    font-size: 15px;
+    line-height: 28px;
     text-align: center;
     cursor: pointer;
     padding: 0;
@@ -263,9 +278,9 @@
     outline: none;
     transition: background 0.15s, transform 0.15s;
   }
-  .sel-dot-refresh:active {
+  .refresh-all-btn:active {
     background: rgba(60,40,30,0.85);
-    transform: rotate(-45deg) scale(0.9);
+    transform: rotate(-180deg) scale(0.9);
   }
 
   @keyframes popIn {
@@ -859,14 +874,8 @@ function updateSelectedDots() {
     if (c.r + c.g + c.b > 680) {
       dot.style.boxShadow = '0 3px 10px rgba(0,0,0,0.15), inset 0 2px 4px rgba(0,0,0,0.08)';
     }
-    dot.setAttribute('aria-label', c.name);
-    selectedDotsEl.appendChild(dot);
-
-    const refresh = document.createElement('button');
-    refresh.className = 'sel-dot-refresh';
-    refresh.textContent = '↺';
-    refresh.setAttribute('aria-label', `change ${c.name}`);
-    refresh.addEventListener('pointerdown', e => {
+    dot.setAttribute('aria-label', `remove ${c.name}`);
+    dot.addEventListener('pointerdown', e => {
       e.preventDefault();
       e.stopPropagation();
       BowlState.removeColor(i);
@@ -879,9 +888,23 @@ function updateSelectedDots() {
         resultLabel.classList.add('visible');
       }
     });
-    selectedDotsEl.appendChild(refresh);
+    selectedDotsEl.appendChild(dot);
   });
-  const full = BowlState.addedColors.length >= 3;
+  const count = BowlState.addedColors.length;
+  if (count > 0 && count < 3) {
+    const refreshAll = document.createElement('button');
+    refreshAll.className = 'refresh-all-btn';
+    refreshAll.textContent = '↺';
+    refreshAll.setAttribute('aria-label', 'clear all colours');
+    refreshAll.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      BowlState.reset();
+      resultLabel.classList.remove('visible');
+    });
+    selectedDotsEl.appendChild(refreshAll);
+  }
+  const full = count >= 3;
   blobScrollRowEl.style.display = full ? 'none' : '';
   resetBtnEl.style.display      = full ? 'flex'  : 'none';
 }
