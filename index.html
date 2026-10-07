@@ -126,7 +126,13 @@
 
   /* Reset button — hidden until 3 colours chosen */
   #reset-btn {
-    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+    pointer-events: none;
+    display: flex;
     width: clamp(50px, 12vw, 72px);
     height: clamp(50px, 12vw, 72px);
     border-radius: 50%;
@@ -140,7 +146,6 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin: 10px auto 0;
   }
   #reset-btn svg { width: 52%; height: 52%; pointer-events: none; }
   #reset-btn:active { transform: scale(0.9); box-shadow: 0 3px 10px rgba(255,107,107,0.35); }
@@ -905,8 +910,10 @@ function updateSelectedDots() {
     selectedDotsEl.appendChild(refreshAll);
   }
   const full = count >= 3;
-  blobScrollRowEl.style.display = full ? 'none' : '';
-  resetBtnEl.style.display      = full ? 'flex'  : 'none';
+  blobScrollRowEl.style.visibility    = full ? 'hidden' : '';
+  blobScrollRowEl.style.pointerEvents = full ? 'none'   : '';
+  resetBtnEl.style.visibility         = full ? 'visible' : 'hidden';
+  resetBtnEl.style.pointerEvents      = full ? ''        : 'none';
 }
 
 // Tap detection via delegation — pointerdown starts tracking, pointerup selects if no drag
