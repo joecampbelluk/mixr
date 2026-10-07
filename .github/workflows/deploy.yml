@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Inject commit hash
+        run: sed -i "s/const COMMIT = '[^']*'/const COMMIT = '$(git rev-parse --short HEAD)'/" index.html
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

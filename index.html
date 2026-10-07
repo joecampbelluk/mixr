@@ -57,7 +57,20 @@
     color: rgba(0,0,0,0.35);
     padding: 2px 0 0;
   }
-  #version-bar.visible { display: block; }
+  #version-bar.visible { display: flex; align-items: center; justify-content: center; gap: 5px; }
+  #version-reload {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: rgba(0,0,0,0.35);
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    transition: transform 0.2s;
+  }
+  #version-reload:active { transform: rotate(-180deg); }
 
   #title {
     position: relative;
@@ -334,7 +347,15 @@
 // ─── Version bar ─────────────────────────────────────────────────────────────
 const COMMIT = '9d1363a';
 const versionBarEl = document.getElementById('version-bar');
-versionBarEl.textContent = COMMIT;
+const versionHashEl = document.createElement('span');
+versionHashEl.textContent = COMMIT;
+const versionReloadEl = document.createElement('button');
+versionReloadEl.id = 'version-reload';
+versionReloadEl.textContent = '↺';
+versionReloadEl.setAttribute('aria-label', 'reload page');
+versionReloadEl.addEventListener('click', () => location.reload());
+versionBarEl.appendChild(versionHashEl);
+versionBarEl.appendChild(versionReloadEl);
 if (localStorage.getItem('mixr-version-bar') === '1') versionBarEl.classList.add('visible');
 document.getElementById('title').addEventListener('dblclick', () => {
   const on = versionBarEl.classList.toggle('visible');
