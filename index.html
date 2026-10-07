@@ -934,7 +934,7 @@ function updateSelectedDots() {
   blobScrollRowEl.style.visibility    = full ? 'hidden' : '';
   blobScrollRowEl.style.pointerEvents = full ? 'none'   : '';
   resetBtnEl.style.visibility         = full ? 'visible' : 'hidden';
-  resetBtnEl.style.pointerEvents      = full ? ''        : 'none';
+  resetBtnEl.style.pointerEvents      = full ? 'auto'    : 'none';
 }
 
 // Tap detection via delegation — pointerdown starts tracking, pointerup selects if no drag
